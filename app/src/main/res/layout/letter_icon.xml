@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:id="@+id/icon_letter_layout"
+    android:layout_width="500dp"
+    android:layout_height="500dp"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <TextView
+        android:id="@+id/icon_text"
+        android:background="#4489fe"
+        android:layout_width="500dp"
+        android:layout_height="500dp"
+        android:gravity="center"
+        android:layout_centerInParent="true"
+        android:textColor="@android:color/white"
+        android:textSize="350sp" />
+
+</RelativeLayout>

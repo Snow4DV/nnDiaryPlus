@@ -1,0 +1,20 @@
+<resources>
+  <string name="app_name">Электронный дневник</string>
+  <string name="title_activity_journal">JournalActivity</string>
+  <string name="tab_text_1">Понедельник</string>
+  <string name="tab_text_2">Вторник</string>
+  <string name="tab_text_3">Среда</string>
+  <string name="tab_text_4">Четверг</string>
+  <string name="tab_text_5">Пятница</string>
+  <string name="tab_text_6">Суббота</string>
+  <string name="appbar_scrolling_view_behavior" translatable="false">android.support.design.widget.AppBarLayout$ScrollingViewBehavior</string>
+  <string name="mode">Day</string>
+
+  <!-- TODO: Remove or change this placeholder text -->
+  <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="crash_text">К сожалению, произошла непредвиденная ошибка. Хотите отправить отчет об ошибке?</string>
+  <string name="crash_title">Ошибочка вышла :(</string>
+  <string name="crash_button_positive">Да</string>
+  <string name="crash_button_negative">Нет</string>
+  <string name="subjectCrash">Дневник - отчет об ошибке</string>
+</resources>

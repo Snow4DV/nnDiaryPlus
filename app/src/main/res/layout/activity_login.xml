@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".LoginActivity"
+    android:background="@drawable/gradient">
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:orientation="vertical">
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_weight="30"
+        android:layout_gravity="center"
+        android:paddingTop="15dp"
+        android:orientation="horizontal"
+        >
+
+      <ImageView
+          android:layout_width="100dp"
+          android:layout_height="100dp"
+          android:layout_gravity="center|start"
+          android:cropToPadding="true"
+          android:scaleType="fitXY"
+          android:src="@drawable/logoonly" />
+
+      <TextView
+          android:layout_width="180dp"
+          android:scaleType="fitCenter"
+          android:layout_height="wrap_content"
+          android:textColor="@android:color/white"
+          android:paddingStart="15dp"
+          android:textSize="40dp"
+          android:textStyle="bold"
+          android:text="Вход в аккаунт"/>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:paddingStart="40dp"
+        android:paddingEnd="40dp"
+        android:layout_weight="70"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        tools:layout_editor_absoluteX="8dp"
+        tools:layout_editor_absoluteY="8dp">
+
+
+
+
+
+      <LinearLayout
+          app:theme="@style/LoginTheme"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:orientation="horizontal">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/logET"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:startIconDrawable="@drawable/ic_account"
+            android:hint="Логин"
+            app:boxStrokeColor="#fff"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+          <com.google.android.material.textfield.TextInputEditText
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+      </LinearLayout>
+
+      <RelativeLayout
+          app:theme="@style/LoginTheme"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:orientation="horizontal">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/passET"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:startIconDrawable="@drawable/ic_password"
+            android:hint="Пароль"
+            app:endIconMode="password_toggle"
+            app:boxStrokeColor="#fff"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+          <com.google.android.material.textfield.TextInputEditText
+              android:layout_width="match_parent"
+              android:inputType="textPassword"
+              android:layout_height="wrap_content"
+              />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+      </RelativeLayout>
+
+      <CheckBox
+          app:theme="@style/LoginTheme"
+          android:id="@+id/checkBox"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:text="Автоматический вход" />
+
+
+      <Button
+          app:theme="@style/LoginTheme"
+          android:id="@+id/button"
+          android:backgroundTint="@android:color/white"
+          android:layout_width="wrap_content"
+          android:paddingTop="15dp"
+          android:paddingBottom="15dp"
+          android:layout_height="wrap_content"
+          android:onClick="loginButton"
+          android:text="  Войти  " />
+
+      <Space
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_weight="10" />
+      <FrameLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content">
+
+      </FrameLayout>
+
+    </LinearLayout>
+  </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

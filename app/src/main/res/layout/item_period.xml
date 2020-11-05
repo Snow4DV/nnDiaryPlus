@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--Card View widget-->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:focusable="true"
+    android:background="?android:attr/selectableItemBackground">
+
+<androidx.cardview.widget.CardView
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cardview"
+    android:layout_width="100dp"
+    android:layout_height="40dp"
+    android:elevation="1dp"
+    card_view:contentPadding="4dp"
+    card_view:cardCornerRadius="20dp"
+    android:back="@drawable/button_stroke"
+    android:layout_margin="1dp"
+    >
+
+    <!--Text View over Card View-->
+    <TextView
+        android:id="@+id/textview"
+        android:layout_gravity="center"
+        android:text="Период"
+        android:textAlignment="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#fff"/>
+
+</androidx.cardview.widget.CardView>
+</RelativeLayout>

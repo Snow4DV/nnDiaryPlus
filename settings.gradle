@@ -1,0 +1,2 @@
+include ':app', ':datepicker'
+project(':datepicker').projectDir = new File('libs/Timeline/datepicker')
