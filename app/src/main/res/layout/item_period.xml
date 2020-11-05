@@ -5,32 +5,34 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:clickable="true"
-    android:focusable="true"
     android:background="?android:attr/selectableItemBackground">
 
-<androidx.cardview.widget.CardView
+<com.google.android.material.card.MaterialCardView
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/cardview"
     android:layout_width="100dp"
-    android:layout_height="40dp"
+    android:layout_height="37dp"
     android:elevation="1dp"
+    card_view:strokeWidth="1dp"
+    card_view:strokeColor="@color/periodButtonStrokeColor"
     card_view:contentPadding="4dp"
+    card_view:cardBackgroundColor="@color/periodButtonColor"
     card_view:cardCornerRadius="20dp"
-    android:back="@drawable/button_stroke"
     android:layout_margin="1dp"
-    >
+    android:clickable="true"
+    android:focusable="true">
 
     <!--Text View over Card View-->
     <TextView
         android:id="@+id/textview"
+        android:textStyle="bold"
         android:layout_gravity="center"
         android:text="Период"
         android:textAlignment="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="#fff"/>
+        android:textColor="@color/periodButtonTextColor"/>
 
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>
 </RelativeLayout>

@@ -47,6 +47,7 @@ public class AdapterFinalMarks extends RecyclerView.Adapter<AdapterFinalMarks.Vi
 
         //old code
         holder.textName.setText(markedLessons.get(position).name);
+        holder.textFinalMark.setText(String.valueOf(String.format("%.02f", markedLessons.get(position).averageMark)));
         holder.itemView.post(new Runnable() {
             @Override
             public void run() {
@@ -54,7 +55,7 @@ public class AdapterFinalMarks extends RecyclerView.Adapter<AdapterFinalMarks.Vi
                 Log.d(TAG, "ViewHolder: setting numColumns to: " +  holder.gridView.getWidth()/32 + ", width is " + holder.gridView.getWidth());
             }
         });
-        /*switch((int) Math.round(nominator / denominator)){
+        switch((int) Math.round(markedLessons.get(position).averageMark)){
             case 3:
                 holder.colorLine.setColorFilter(ContextCompat.getColor(cont,
                         R.color.REDYELLOW));
@@ -75,7 +76,7 @@ public class AdapterFinalMarks extends RecyclerView.Adapter<AdapterFinalMarks.Vi
                 holder.colorLine.setColorFilter(ContextCompat.getColor(cont,
                         R.color.WHITE));
                 break;
-        }*/
+        }
     }
 
     @Override

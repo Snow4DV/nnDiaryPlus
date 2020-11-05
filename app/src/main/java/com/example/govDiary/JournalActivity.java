@@ -9,7 +9,9 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
@@ -31,6 +33,8 @@ import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
+import com.amulyakhare.textdrawable.TextDrawable;
+import com.amulyakhare.textdrawable.util.ColorGenerator;
 import com.google.android.material.snackbar.Snackbar;
 import com.mikepenz.materialdrawer.AccountHeader;
 import com.mikepenz.materialdrawer.AccountHeaderBuilder;
@@ -52,7 +56,7 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
     Toolbar toolBar;
     public Context context;
     String studentFIO;
-    String student;
+    View mTooltipView;
     Drawer drawer;
     int runningActivity = 1;
     FragmentTransaction ft2 = null;
@@ -64,6 +68,7 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
     DairyFragment dairyFragment;
     String TAG = "JorunalActivity";
     SharedPreferences pref;
+
     TextView titleToolbar;
     ImageButton multibutton;
     SharedPreferences.Editor editor;
@@ -89,21 +94,16 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
         Log.d(TAG, "StudentName: " + studentFIO);
         titleToolbar.setText("Дневник");
         //Getting the drawable icon with letter inside
-        View inflatedLayout = getLayoutInflater().inflate(R.layout.letter_icon, null);
-        RelativeLayout relativeLayout = inflatedLayout.findViewById(R.id.icon_letter_layout);
-        relativeLayout.setDrawingCacheEnabled(true);
-        relativeLayout.measure(View.MeasureSpec.makeMeasureSpec(100, View.MeasureSpec.UNSPECIFIED),
-                View.MeasureSpec.makeMeasureSpec(100, View.MeasureSpec.UNSPECIFIED));
-        relativeLayout.layout(0, 0, relativeLayout.getMeasuredWidth(), relativeLayout.getMeasuredHeight());
-        relativeLayout.buildDrawingCache(true);
-        final Bitmap bm = relativeLayout.getDrawingCache();
+        ColorGenerator generator = ColorGenerator.MATERIAL;
+        TextDrawable drawable = TextDrawable.builder()
+                .buildRect(String.valueOf((char)studentFIO.split(" ")[1].charAt(0)), generator.getColor("studentFIO"));
 
         // Create the AccountHeader
         AccountHeader headerResult = new AccountHeaderBuilder()
                 .withActivity(this)
                 .withHeaderBackground(R.drawable.gradient)
                 .addProfiles(
-                        new ProfileDrawerItem().withName(studentFIO).withEmail(pref.getString("schoolName", "Учебное заведение")).withIcon(bm)
+                        new ProfileDrawerItem().withName(studentFIO).withEmail(pref.getString("schoolName", "Учебное заведение")).withIcon(drawable)
                 )
                 .withSelectionListEnabledForSingleProfile(false)
                 .build();
@@ -216,6 +216,22 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
         drawer.setSelection(1,false);
         super.onResume();
 
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (mTooltipView != null) {
+            ViewGroup parent = (ViewGroup) mTooltipView.getParent();
+            if (parent != null) {
+                parent.removeView(mTooltipView);
+                mTooltipView = null;
+            }
+        }
+        return super.dispatchTouchEvent(ev);
+    }
+
+    public void setMTooltipView(View mTooltipView) {
+        this.mTooltipView = mTooltipView;
     }
 
     private boolean materialDrawerItemClickHolder(int position){

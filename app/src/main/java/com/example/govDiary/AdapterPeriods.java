@@ -37,7 +37,7 @@ public class AdapterPeriods
                     .findViewById(R.id.textview);
             cardView = view.findViewById(R.id.cardview);
             this.onClickListener = onClickListener;
-            view.setOnClickListener(this);
+            cardView.setOnClickListener(this);
         }
 
         @Override

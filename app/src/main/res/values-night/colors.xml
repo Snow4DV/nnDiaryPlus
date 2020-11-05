@@ -2,15 +2,14 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <color name="colorPrimary">#3a77e0</color>
     <color name="colorToolbar">#202020</color>
-    <color name="statusbarColor">#202020
-    </color>
+    <color name="statusbarColor">#202020</color>
     <color name="colorPrimaryDark">#3266bf</color>
     <color name="colorAccent">#448AFF</color>
     <color name="accent">#448AFF</color>
     <color name="secondaryText">#BDBDBD</color>
     <!-- Material DEFAULT colors -->
     <color name="material_drawer_primary">#2196F3</color>
-    <color name="material_drawer_primary_dark">#1976D2</color>
+    <color name="material_drawer_primary_dark">#145392</color>
     <color name="material_drawer_primary_light">#BBDEFB</color>
     <color name="material_drawer_accent">#FF4081</color>
 
@@ -52,5 +51,10 @@
     <color name="GREEN">#00e676</color>
     <color name="mtrl_textinput_default_box_stroke_color">#fff</color>
     <color name="WHITE">#e0e0e0</color>
-
+    <color name="periodButtonColor">#171717</color>
+    <color name="periodButtonColorActive">#143e68</color>
+    <color name="periodButtonTextColor">#8a8d92</color>
+    <color name="periodButtonTextColorActive">@color/accent</color>
+    <color name="periodButtonStrokeColor">#646569</color>
+    <color name="periodButtonStrokeColorActive">@color/periodButtonColorActive</color>
 </resources>
