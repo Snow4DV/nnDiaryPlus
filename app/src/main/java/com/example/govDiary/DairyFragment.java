@@ -155,7 +155,7 @@ public class DairyFragment extends Fragment {
             try {
                 swipeRefreshLayout.setRefreshing(true);
                 items.clear();
-                response = Api.sendRequest("https://edu.gounn.ru/apiv3/getdiary?student=" + studentID + "&days=" + days + "&rings=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null);
+                response = Api.sendRequest("https://edu.gounn.ru/apiv3/getdiary?student=" + studentID + "&days=" + days + "&rings=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
                 if(response == null) throw new ConnectException();
                 JSONObject jsStud = (new JSONObject(response.body().string())).getJSONObject("response").getJSONObject("result");
                 if(jsStud.getString("students").equals("null")) throw new IllegalArgumentException();

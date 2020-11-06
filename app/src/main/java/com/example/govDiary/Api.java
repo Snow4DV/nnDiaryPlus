@@ -1,5 +1,9 @@
 package com.example.govDiary;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.IOException;
@@ -19,7 +23,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class Api {
-    public static Response sendRequest(String url, RequestBody formBody){
+    public static Response sendRequest(String url, RequestBody formBody, Context context, Boolean ifLogin){
         //ONLY FOR TESTING PURPOSES
         // Create a trust manager that does not validate certificate chains
         final TrustManager[] trustAllCerts = new TrustManager[] {
@@ -75,7 +79,14 @@ public class Api {
         Response response = null;
         try {
             response = client.newCall(request).execute();
-
+            if(response.code() == 400 && !ifLogin){
+                SharedPreferences pref = context.getSharedPreferences("LogData",Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = pref.edit();
+                editor.putString("loginStatus", "fail");
+                editor.apply();
+                Intent intent = new Intent(context,JournalActivity.class);
+                context.startActivity(intent);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -48,7 +48,6 @@ public class MainActivity extends AppCompatActivity {
     private long backPressedTime;
     String authToken;
     SharedPreferences.Editor editor;
-    Boolean exceptionCaught = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         pref = getApplicationContext().getSharedPreferences("LogData", Context.MODE_PRIVATE); // saving data of application
@@ -86,37 +85,14 @@ public class MainActivity extends AppCompatActivity {
 
     private class tryLogin extends AsyncTask<String, Integer, Void> {
         protected Void doInBackground(String... urls) {
-            Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/getboardnotices?limit=0&page=1&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu ", null);
-            if(response == null){
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        showErrorDialog();
-                    }
-                });
-            }
-            else{
-                try {
-                    if(response.code() == 400) {
-                        snackbarExecute("Кажется, логин-пароль изменился или истек срок действия вашей сессии авторизации. Авторизуйтесь повторно.");
-                        editor.putString("loginStatus", "fail");
-                        editor.commit();
-                    }
-                    else{
-                        Intent intent = new Intent(MainActivity.this, JournalActivity.class);
-                        Log.d("MainActivityAuth", "auth succeed");
-                        intent.putExtra("authToken", authToken);
-                        intent.putExtra("studentID", pref.getString("studentID", "errGettingStudIdFromPref"));
-                        startActivity(intent);
-                    }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    snackbarExecute("Произошла ошибка при подключении");
-                }
-            }
+            Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/getboardnotices?limit=0&page=1&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu ", null, getApplicationContext(), true);
 
 
+                    Intent intent = new Intent(MainActivity.this, JournalActivity.class);
+                    Log.d("MainActivityAuth", "auth succeed");
+                    intent.putExtra("authToken", authToken);
+                    intent.putExtra("studentID", pref.getString("studentID", "errGettingStudIdFromPref"));
+                    startActivity(intent);
 
 
 

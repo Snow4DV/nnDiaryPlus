@@ -94,7 +94,7 @@ public class LoginActivity extends AppCompatActivity {
                     .add("login", logf)
                     .add("password", passf)
                     .build();
-            Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/auth?devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token&vendor=edu", formBody);
+            Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/auth?devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token&vendor=edu", formBody, getApplicationContext(), true);
             if(response == null){
                 editor.putString("loginStatus", "fail");
                 editor.commit();
@@ -118,7 +118,7 @@ public class LoginActivity extends AppCompatActivity {
                         intent.putExtra("authToken", token);
                         intent.putExtra("timeToExpire", timeToExpire);
                         //получаем "правила" и фио юзера
-                        Response responseRules = Api.sendRequest("https://edu.gounn.ru/apiv3/getrules?devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + token + "&vendor=edu", null);
+                        Response responseRules = Api.sendRequest("https://edu.gounn.ru/apiv3/getrules?devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + token + "&vendor=edu", null, getApplicationContext(), true);
                         String rulesJsonPlainString = responseRules.body().string();
                         JSONObject jsRules = new JSONObject(rulesJsonPlainString);
                         Log.d("LoginActivity", "ServerAnswerRulesResult: " + jsRules.getJSONObject("response").getJSONObject("result").toString());
