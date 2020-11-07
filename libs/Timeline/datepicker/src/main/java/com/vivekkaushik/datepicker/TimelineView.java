@@ -55,7 +55,9 @@ public class TimelineView extends RecyclerView {
     public int getMonthTextColor() {
         return monthTextColor;
     }
-
+    public int getPosition() {
+        return linLayMan.findFirstVisibleItemPosition();
+    }
     public void setMonthTextColor(int color) {
         this.monthTextColor = color;
     }
@@ -124,13 +126,14 @@ public class TimelineView extends RecyclerView {
             Date initialDate = new SimpleDateFormat("yyyy-MM-dd")
                     .parse(year + "-" + (month + 1) + "-" + this.date);
             long diff =  activeDate.getTime().getTime() - initialDate.getTime();
+            Log.d(TAG, "setActiveDate: diff is " + diff);
             int position = (int) (diff / (1000 * 60 * 60 * 24));
             adapter.setSelectedPosition(position);
             int scrollPosition = position;
             if(scrollPosition < 0){
                 scrollPosition = 0;
             }
-            Log.d(TAG, "setActiveDate: setting position to " + position + ", scroll position is " + scrollPosition);
+            Log.d(TAG, "setActiveDate: init date is  " + year + "/" + month + "/" + date);
             linLayMan.scrollToPosition(scrollPosition);
             adapter.notifyDataSetChanged();
             invalidate();

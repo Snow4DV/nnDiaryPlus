@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.LinearLayout;
 
 import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import java.text.ParseException;
 import java.util.Calendar;
@@ -114,6 +115,10 @@ public class DatePickerTimeline extends LinearLayout {
      */
     public void setActiveDate(Calendar date) {
         timelineView.setActiveDate(date);
+    }
+
+    public int getPosition() {
+        return timelineView.getPosition();
     }
 
     /**

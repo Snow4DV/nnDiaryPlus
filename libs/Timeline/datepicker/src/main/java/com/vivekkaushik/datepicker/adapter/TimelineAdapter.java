@@ -1,5 +1,6 @@
 package com.vivekkaushik.datepicker.adapter;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -88,7 +89,7 @@ public class TimelineAdapter extends RecyclerView.Adapter<TimelineAdapter.ViewHo
      */
     public void setSelectedPosition(int selectedPosition) {
         this.selectedPosition = selectedPosition;
-
+        Log.d(TAG, "setSelectedPosition: got " + selectedPosition);
     }
 
     @Override

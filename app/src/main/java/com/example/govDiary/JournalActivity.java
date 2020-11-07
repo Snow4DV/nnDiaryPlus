@@ -146,9 +146,7 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
         if(!pref.contains("notFirstRun")) {
             AlertDialog alertDialog = new AlertDialog.Builder(JournalActivity.this).create();
             alertDialog.setTitle("Привет!");
-            alertDialog.setMessage("Благодарю за загрузку моего ПО. Это одна из первых версий программы, поэтому в ней могут содержатся различные баги, связанные с особенностями ведения дневника в вашей школе." +
-                    " Приложение тестировалось на версии АИАС Аверс - 4.1, с ранними версиями работа может быть некорректна. " +
-                    "\n\n P.S. Разработчики АИАС Аверс не имеют никакого отношения к данной программе! При возникновении проблем вы можете написать на эл. почту: averscrashreport@yandex.ru");
+            alertDialog.setMessage("Благодарю за загрузку моего ПО. Это одна из первых версий программы, поэтому в ней могут содержатся различные баги и недочеты. Я стараюсь по-максимуму совершенствовать эту прог");
             alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                     new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
@@ -199,7 +197,7 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
             AlertDialog alertDialog = new AlertDialog.Builder(JournalActivity.this).create();
             alertDialog.setTitle("Информация");
             alertDialog.setIcon(R.drawable.ic_info_dark);
-            alertDialog.setMessage("Цвет оценки зависит от ее значимости. Зеленая оценка - высокая значимость, желтая - средняя значимость, красная - низкая значимость, а голубая - очень низкая значимость.");
+            alertDialog.setMessage("Цвет оценки зависит от ее значимости. Зеленая оценка - высокая значимость, желтая - средняя значимость, голубая - низкая значимость, а красная не участвует в подсчете среднего балла.");
             alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Хорошо",
                     new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {

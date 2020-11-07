@@ -82,10 +82,13 @@ public class Api {
             if(response.code() == 400 && !ifLogin){
                 SharedPreferences pref = context.getSharedPreferences("LogData",Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = pref.edit();
+                Boolean willStart = false;
+
                 editor.putString("loginStatus", "fail");
                 editor.apply();
-                Intent intent = new Intent(context,JournalActivity.class);
-                context.startActivity(intent);
+                    Intent intent = new Intent(context, LoginActivity.class);
+                    context.startActivity(intent);
+
             }
         } catch (IOException e) {
             e.printStackTrace();

@@ -57,10 +57,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
             if(pref.getString("loginStatus", "").equals("success")){
                 authToken = pref.getString("authToken", "");
-                tryLogin tL = new tryLogin();
-                tL.execute();
 
-        }
+                Intent intent = new Intent(MainActivity.this, JournalActivity.class);
+                Log.d("MainActivityAuth", "auth succeed");
+                intent.putExtra("authToken", authToken);
+                intent.putExtra("studentID", pref.getString("studentID", "errGettingStudIdFromPref"));
+                startActivity(intent);
+
+
+            }
         else {
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             intent.putExtra("authToken", authToken);
@@ -71,37 +76,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public static String SHA1(String clearString)
-    {
-        try {
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
-            messageDigest.update(clearString.getBytes("UTF-8"));
-            return null;
-        } catch (Exception ignored) {
-            ignored.printStackTrace();
-            return null;
-        }
-    }
-
-    private class tryLogin extends AsyncTask<String, Integer, Void> {
-        protected Void doInBackground(String... urls) {
-            Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/getboardnotices?limit=0&page=1&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu ", null, getApplicationContext(), true);
-
-
-                    Intent intent = new Intent(MainActivity.this, JournalActivity.class);
-                    Log.d("MainActivityAuth", "auth succeed");
-                    intent.putExtra("authToken", authToken);
-                    intent.putExtra("studentID", pref.getString("studentID", "errGettingStudIdFromPref"));
-                    startActivity(intent);
 
 
 
-
-
-            return null;
-        }
-
-    }
     @Override
     public void onBackPressed()
     {
@@ -125,24 +102,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void showErrorDialog(){
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Ошибочка вышла");
-        builder.setMessage("Отсутствует интернет-соединение с сервером. Хотите попробовать еще раз?");
-        builder.setPositiveButton("Да", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                tryLogin tL = new tryLogin();
-                tL.execute();
-            }
-        });
-        builder.setNegativeButton("Нет", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                System.exit(0);
-            }
-        });
-        Log.d("MainActivityThread", "creatingDialog");
-        AlertDialog dialog = builder.show();
-    }
 
 
     }

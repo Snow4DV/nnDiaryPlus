@@ -13,6 +13,7 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -22,6 +23,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.google.gson.JsonArray;
@@ -39,14 +41,18 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.nio.channels.NoConnectionPendingException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.FormBody;
 import okhttp3.MediaType;
@@ -56,15 +62,19 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import static androidx.constraintlayout.widget.Constraints.TAG;
+import static androidx.fragment.app.FragmentStatePagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT;
+import static org.apache.commons.lang3.time.DateUtils.MILLIS_PER_DAY;
 
 public class DairyFragment extends Fragment {
-    RecyclerView recyclerView;
-    Adapter adapter;
     String authToken, studentID; // getting these from intent
     String lastDays = "";
+    private Date initDate;
+    ProgressBar progressBar;
+    Boolean periodsLoaded = false;
     SharedPreferences.Editor editor;
     SharedPreferences pref;
-    SwipeRefreshLayout swipeRefreshLayout;
+    DiaryPagerAdapter diaryPagerAdapter;
+    ViewPager viewPager;
     boolean loadingFinished = false;
     ArrayList<Lesson> items;
     Calendar dateAndTime;
@@ -73,18 +83,23 @@ public class DairyFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        //TODO: if periods couldn't be got make swiperefreshlistener active
         View dairyFragmentView =  inflater.inflate(R.layout.dairy, container, false);
+        progressBar = dairyFragmentView.findViewById(R.id.progress_circular);
+        viewPager = dairyFragmentView.findViewById(R.id.viewPager);
         pref = getContext().getSharedPreferences("LogData", Context.MODE_PRIVATE);
         editor = pref.edit();
         dateAndTime = Calendar.getInstance();
         onDateSetListener = (view, year, monthOfYear, dayOfMonth) -> {
-            dateAndTime.set(Calendar.YEAR, year);
-            dateAndTime.set(Calendar.MONTH, monthOfYear);
-            dateAndTime.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-            adapter.notifyDataSetChanged();
-            new getDairy(year + "" + String.format("%02d", monthOfYear + 1) + "" + String.format("%02d", dayOfMonth) + "-" +year   + "" + String.format("%02d", monthOfYear + 1) + "" + String.format("%02d", dayOfMonth)).execute();
-            datePickerTimeline.setActiveDate(dateAndTime);
-            Log.d(TAG, "onCreateView: onDateSetListener: setting active date to " + dateAndTime.getTime().toString());
+            if(periodsLoaded) {
+                dateAndTime.set(Calendar.YEAR, year);
+                dateAndTime.set(Calendar.MONTH, monthOfYear);
+                dateAndTime.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                //adapter.notifyDataSetChanged();
+                //TODO:new getDairy(year + "" + String.format("%02d", monthOfYear + 1) + "" + String.format("%02d", dayOfMonth) + "-" +year   + "" + String.format("%02d", monthOfYear + 1) + "" + String.format("%02d", dayOfMonth)).execute();
+                datePickerTimeline.setActiveDate(dateAndTime);
+                Log.d(TAG, "onCreateView: onDateSetListener: setting active date to " + dateAndTime.getTime().toString());
+            }
         };
         TypedValue typedValue = new TypedValue();
         Resources.Theme theme = getActivity().getTheme();
@@ -96,40 +111,16 @@ public class DairyFragment extends Fragment {
         datePickerTimeline.setActiveDate(cal);
         //datePickerTimeline.setInitialDate(2020,5,10);
         // Set a date Selected Listener
-        datePickerTimeline.setOnDateSelectedListener(new OnDateSelectedListener() {
-            @Override
-            public void onDateSelected(int year, int month, int day, int dayOfWeek) {
-                swipeRefreshLayout.setRefreshing(true);
-                Log.d("TAG", "onDateSelected: " + year + "/" + month + "/" + day + "/" + dayOfWeek);
-                if (!items.isEmpty())
-                    items.clear(); //bugfix for inconsistency detected
-                adapter.notifyDataSetChanged();
-                new getDairy(year + "" + String.format("%02d", month + 1) + "" + String.format("%02d", day) + "-" + year + "" + String.format("%02d", month + 1) + "" + String.format("%02d", day)).execute();
-            }
+        //TODO: Check if periods loaded!!!
 
-            @Override
-            public void onDisabledDateSelected(int year, int month, int day, int dayOfWeek, boolean isDisabled) {
-                Log.d(TAG, "onDisabledDateSelected: Disabled Date Selected, doing nothing");
-            }
-        });
         items = new ArrayList<>();
-        recyclerView = dairyFragmentView.findViewById(R.id.recyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new Adapter(getContext(), items);
-        recyclerView.setAdapter(adapter);
         initColors();
         int year = Calendar.getInstance().get(Calendar.YEAR);
         int month = Calendar.getInstance().get(Calendar.MONTH);
         int day = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
-        swipeRefreshLayout = dairyFragmentView.findViewById(R.id.swipe_container);
-        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                new getDairy(lastDays).execute();
-            }
-        });
-        new getDairy(year + "" + String.format("%02d", month + 1) + "" + String.format("%02d", day) + "-" + year + "" + String.format("%02d", month + 1) + "" + String.format("%02d", day)).execute();
-        swipeRefreshLayout.setRefreshing(true);
+
+        //TODO:new getDairy(year + "" + String.format("%02d", month + 1) + "" + String.format("%02d", day) + "-" + year + "" + String.format("%02d", month + 1) + "" + String.format("%02d", day)).execute();
+        (new getPeriods(authToken)).execute();
         return dairyFragmentView;
     }
 
@@ -143,165 +134,9 @@ public class DairyFragment extends Fragment {
 
 
 
-    private class getDairy extends AsyncTask<String, Integer, Void> {
-        String days;
-        Response response;
-        public getDairy(String d) {
-            super();
-            days = d;
-        }
-        @Override
-        protected Void doInBackground(String... strings) {
-            try {
-                swipeRefreshLayout.setRefreshing(true);
-                items.clear();
-                response = Api.sendRequest("https://edu.gounn.ru/apiv3/getdiary?student=" + studentID + "&days=" + days + "&rings=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
-                if(response == null) throw new ConnectException();
-                JSONObject jsStud = (new JSONObject(response.body().string())).getJSONObject("response").getJSONObject("result");
-                if(jsStud.getString("students").equals("null")) throw new IllegalArgumentException();
-                JSONObject js = jsStud.getJSONObject("students").getJSONObject(studentID).getJSONObject("days").getJSONObject((days.split("-"))[0]).getJSONObject("items");
-                for(Iterator<String> iter = js.keys();iter.hasNext();) {
-                    String key = iter.next();
-                    Log.d(TAG, "doInBackground: keys of js: " + key);
-                    String lessonName = js.getJSONObject(key).getString("name");
-                    String teacher = js.getJSONObject(key).getString("teacher");
-                    String lessonNumber = js.getJSONObject(key).getString("num");
-                    String room = js.getJSONObject(key).getString("room");
-                    String homeworkString = "null";
-                    if(js.getJSONObject(key).has("homework")) {
-                        JSONObject homework = js.getJSONObject(key).getJSONObject("homework");
-                        //iterating through hw
-                        for (Iterator<String> iter2 = homework.keys(); iter2.hasNext(); ) {
-                            String hwKey = iter2.next();
-                            homeworkString = "";
-                            boolean ifIndividual = homework.getJSONObject(hwKey).getBoolean("individual");
-                            Log.d(TAG, "doInBackground: keys of hw: " + hwKey);
-                            if (!ifIndividual) {
-                                homeworkString += homework.getJSONObject(hwKey).getString("value") + ", ";
-                            } else {
-                                homeworkString += homework.getJSONObject(hwKey).getString("value") + " - индивидуальное задание" + ", ";
-                            }
-                        }
-                        if (!homeworkString.equals("null")) {
-                            homeworkString = homeworkString.substring(0, homeworkString.length() - 2);
-                        }
-                    }
-                    //iterating through marks
-
-                    String markStr = "null";
-                    if(js.getJSONObject(key).has("assessments")) {
-                        JSONArray marks = js.getJSONObject(key).getJSONArray("assessments");
-                        for (int i = 0; i < marks.length(); i++) {
-                            String color = null;
-                            String controlType = null;
-                            int weight;
-                            if (marks.getJSONObject(i).has("color"))
-                                color = marks.getJSONObject(i).getString("color");
-                            if (marks.getJSONObject(i).has("control_type"))
-                                controlType = marks.getJSONObject(i).getString("control_type");
-                            if (marks.getJSONObject(i).has("weight"))
-                                weight = marks.getJSONObject(i).getInt("weight");
-                            String comment = marks.getJSONObject(i).getString("comment");
-                            String value = marks.getJSONObject(i).getString("value");
-                            markStr = "";
-                            if (color != null) {
-                                markStr += "<font color=" + color + ">" + value + "</font>, ";
-                            } else {
-                                markStr += value + ", ";
-                            }
-                        }
-                        if (!markStr.equals("null")) {
-                            markStr = markStr.substring(0, markStr.length() - 2);
-                        }
-                    }
-                    //adding to items
-                    items.add(new Lesson(lessonName, teacher, homeworkString, Integer.parseInt(lessonNumber), markStr));
-
-                }
-
-            } catch (IllegalArgumentException e){
-                e.printStackTrace();
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Snackbar.make(getActivity().findViewById(android.R.id.content),"Данные за выходной день не могут быть получены.",Snackbar.LENGTH_SHORT).show();
-                    }
-                });
-
-            }
-            catch (ConnectException e){
-                e.printStackTrace();
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Snackbar.make(getActivity().findViewById(android.R.id.content),"Проблемы с интернет-соединением.",Snackbar.LENGTH_SHORT).show();
-                    }
-                });
-
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Snackbar.make(getActivity().findViewById(android.R.id.content),"Произошла ошибка. Попробуйте еще раз.",Snackbar.LENGTH_SHORT).show();
-                    }
-                });
-                Log.e("TAG", "getDiary: " + "JSON/IO ex");
-            }
-            new Handler(Looper.getMainLooper()).post(new Runnable() {
-                public void run() {
-
-                    adapter.notifyDataSetChanged();
-                }
-            });
-            //loading.dismiss();
-
-           try {
-               Objects.requireNonNull(getActivity()).runOnUiThread(new Runnable() {
-                   public void run() {
-                       swipeRefreshLayout.setRefreshing(false);
-                   }
-               });
-           }
-           catch(NullPointerException e){
-               e.printStackTrace();
-               try {
-                   Objects.requireNonNull(getActivity()).runOnUiThread(new Runnable() {
-                       @Override
-                       public void run() {
-                           Snackbar.make(getActivity().findViewById(android.R.id.content), "Произошла ошибка. Попробуйте еще раз.", Snackbar.LENGTH_SHORT).show();
-                       }
-                   });
-               }
-               catch(NullPointerException e2){
-                   e2.printStackTrace();
-               }
-           }
-
-            editor.apply();
-            loadingFinished = true;
-            return null;
-
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-            lastDays = days;
-            swipeRefreshLayout.setRefreshing(false);
-            adapter.notifyDataSetChanged();
-            try {
-                response.close();
-            }
-            catch(NullPointerException e){
-                Log.d(TAG, "onPostExecute: no response");
-            }
-        }
-    }
-
-    public boolean ifLoadingFinished(){
-        return loadingFinished;
+    public void setDateToDatePicker(Calendar date){
+        Log.d(TAG, "setDateToDatePicker: got " + date.getTime().toString());
+        datePickerTimeline.setActiveDate(date);
     }
 
     private void initColors() {
@@ -310,6 +145,128 @@ public class DairyFragment extends Fragment {
             datePickerTimeline.setDayTextColor(getResources().getColor(R.color.white));
             datePickerTimeline.setDateTextColor(getResources().getColor(R.color.white));
         }
+    }
+
+    private class getPeriods extends AsyncTask<String, Integer, Void> {
+        String authT;
+        getPeriods(String auth){
+            authT = auth;
+        }
+        @Override
+        protected Void doInBackground(String... strings) {
+            try {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        //TODO:swipeRefreshLayout.setRefreshing(true); Make some other loading dialog
+                    }
+                });
+
+                Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/getperiods?weeks=false&show_disabled=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authT + "&vendor=edu", null, getContext(), false);
+                if (response == null) throw new NoConnectionPendingException();
+                JSONArray periods = (new JSONObject(response.body().string())).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(0).getJSONArray("periods");
+                String yearStart = "", yearEnd = "";
+                for (int i = 0; i < periods.length(); i++) {
+                    String startDate = periods.getJSONObject(i).getString("start");
+                    String endDate = periods.getJSONObject(i).getString("end");
+                    if(i == periods.length() - 1){
+                        yearEnd = endDate;
+                    }
+                    else if(i == 0){
+                        yearStart = startDate;
+                    }
+
+                }
+                //generating year period:
+                Date yearStartDate = new SimpleDateFormat("yyyyMMdd").parse(yearStart);
+                Date yearEndDate = new SimpleDateFormat("yyyyMMdd").parse(yearEnd);
+                Log.d(TAG, "doInBackground: got last day: " + yearEndDate.toString() + "and first date " + yearStartDate.toString());
+                int days = (int) TimeUnit.DAYS.convert(yearEndDate.getTime() - yearStartDate.getTime(), TimeUnit.MILLISECONDS);
+                int currentDay = (int) TimeUnit.DAYS.convert(Calendar.getInstance().getTime().getTime() - yearStartDate.getTime(), TimeUnit.MILLISECONDS);
+                periodsLoaded = true;
+                progressBar.setVisibility(View.INVISIBLE);
+                diaryPagerAdapter = new DiaryPagerAdapter(getChildFragmentManager(), BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
+                diaryPagerAdapter.setTokenAndId(authToken, studentID);
+                Calendar initCal = Calendar.getInstance();
+                initDate = yearStartDate;
+                initCal.setTime(yearStartDate);
+                diaryPagerAdapter.setInitDateAndDaysAmount(initCal,days + 1);
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        viewPager.setAdapter(diaryPagerAdapter);
+                        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+                            @Override
+                            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+                            }
+
+                            @Override
+                            public void onPageSelected(int position) {
+                                //There are no pointers in java idk why did it worked in other way so i did this. Sorry:
+                                Calendar tCal = Calendar.getInstance();
+                                tCal.setTime(initDate);
+                                tCal.add(Calendar.DATE, position);
+                                Log.d(TAG, "onPageSelected: " + "date on screen is " + tCal.getTime().toString() + ",init cal is " + yearStartDate.toString());
+                                setDateToDatePicker(tCal);
+                            }
+
+                            @Override
+                            public void onPageScrollStateChanged(int state) {
+
+                            }
+                        });
+                        Calendar initCalc = Calendar.getInstance();
+                        initCalc.setTime(initDate);
+                        datePickerTimeline.setInitialDate(initCalc.get(Calendar.YEAR), initCalc.get(Calendar.MONTH), initCalc.get(Calendar.DAY_OF_MONTH));
+                        viewPager.setCurrentItem(currentDay);
+                        Log.d(TAG, "run: curDay:" + currentDay + ",days:" + days);
+                        datePickerTimeline.setOnDateSelectedListener(new OnDateSelectedListener() {
+                            @Override
+                            public void onDateSelected(int year, int month, int day, int dayOfWeek) {
+                                if(periodsLoaded) {
+                                    Log.d("TAG", "onDateSelected: " + year + "/" + month + "/" + day + "/" + dayOfWeek);
+                                    if (!items.isEmpty())
+                                        items.clear(); //bugfix for inconsistency detected
+                                    Calendar newCal = Calendar.getInstance();
+                                    newCal.set(year,month,day, 0, 0);
+                                    Calendar initCal = Calendar.getInstance();
+                                    initCal.setTime(initDate);
+                                    initCal.set(Calendar.HOUR, 0);
+                                    initCal.set(Calendar.MINUTE, 0);
+                                    initCal.set(Calendar.MILLISECOND, 0);
+                                   //Toast.makeText(getContext(), "selected: " + ((newCal.getTimeInMillis() - initCal.getTimeInMillis())/MILLIS_PER_DAY), Toast.LENGTH_SHORT).show();
+                                    viewPager.setCurrentItem((int) ((newCal.getTimeInMillis() - initCal.getTimeInMillis())/MILLIS_PER_DAY));
+                                }
+                                else{
+                                    Toast.makeText(getContext(), "Подождите, пока завершится загрузка", Toast.LENGTH_SHORT).show();
+                                    Calendar cal = Calendar.getInstance();
+                                    setDateToDatePicker(cal);
+                                    //TODO: back to prev date
+                                }
+                            }
+
+                            @Override
+                            public void onDisabledDateSelected(int year, int month, int day, int dayOfWeek, boolean isDisabled) {
+                                Log.d(TAG, "onDisabledDateSelected: Disabled Date Selected, doing nothing");
+                            }
+                        });
+
+                    }
+                });
+
+
+
+            }
+            catch(Exception e){
+                e.printStackTrace();
+                Snackbar.make(Objects.requireNonNull(getActivity()).findViewById(android.R.id.content),"Произошла ошибка при загрузке данных. Повторите позже.",Snackbar.LENGTH_SHORT).show();
+            }
+            return null;
+
+        }
+
+
     }
 
 
