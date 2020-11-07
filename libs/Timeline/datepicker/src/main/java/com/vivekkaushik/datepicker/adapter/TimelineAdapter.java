@@ -26,6 +26,7 @@ public class TimelineAdapter extends RecyclerView.Adapter<TimelineAdapter.ViewHo
     private Calendar calendar = Calendar.getInstance();
     private TimelineView timelineView;
     private Date[] deactivatedDates;
+    private int amount = Integer.MAX_VALUE;
 
     private OnDateSelectedListener listener;
 
@@ -35,6 +36,10 @@ public class TimelineAdapter extends RecyclerView.Adapter<TimelineAdapter.ViewHo
     public TimelineAdapter(TimelineView timelineView, int selectedPosition) {
         this.timelineView = timelineView;
         this.selectedPosition = selectedPosition;
+    }
+
+    public void setAmount(int amount){
+        this.amount = amount;
     }
 
     @NonNull
@@ -94,7 +99,7 @@ public class TimelineAdapter extends RecyclerView.Adapter<TimelineAdapter.ViewHo
 
     @Override
     public int getItemCount() {
-        return Integer.MAX_VALUE;
+        return amount;
     }
 
     public void disableDates(Date[] dates) {

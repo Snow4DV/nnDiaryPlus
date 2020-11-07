@@ -62,6 +62,10 @@ public class TimelineView extends RecyclerView {
         this.monthTextColor = color;
     }
 
+    public void setDatesAmount(int amount) {
+        adapter.setAmount(amount);
+    }
+
     public int getDateTextColor() {
         return dateTextColor;
     }

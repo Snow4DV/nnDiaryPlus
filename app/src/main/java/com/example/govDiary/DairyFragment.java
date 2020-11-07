@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.util.TypedValue;
@@ -99,6 +98,15 @@ public class DairyFragment extends Fragment {
                 //TODO:new getDairy(year + "" + String.format("%02d", monthOfYear + 1) + "" + String.format("%02d", dayOfMonth) + "-" +year   + "" + String.format("%02d", monthOfYear + 1) + "" + String.format("%02d", dayOfMonth)).execute();
                 datePickerTimeline.setActiveDate(dateAndTime);
                 Log.d(TAG, "onCreateView: onDateSetListener: setting active date to " + dateAndTime.getTime().toString());
+                Calendar newCal = Calendar.getInstance();
+                newCal.set(year,monthOfYear,dayOfMonth, 0, 0);
+                Calendar initCal = Calendar.getInstance();
+                initCal.setTime(initDate);
+                initCal.set(Calendar.HOUR, 0);
+                initCal.set(Calendar.MINUTE, 0);
+                initCal.set(Calendar.MILLISECOND, 0);
+                //Toast.makeText(getContext(), "selected: " + ((newCal.getTimeInMillis() - initCal.getTimeInMillis())/MILLIS_PER_DAY), Toast.LENGTH_SHORT).show();
+                viewPager.setCurrentItem((int) ((newCal.getTimeInMillis() - initCal.getTimeInMillis())/MILLIS_PER_DAY));
             }
         };
         TypedValue typedValue = new TypedValue();
@@ -191,6 +199,7 @@ public class DairyFragment extends Fragment {
                 initDate = yearStartDate;
                 initCal.setTime(yearStartDate);
                 diaryPagerAdapter.setInitDateAndDaysAmount(initCal,days + 1);
+                datePickerTimeline.setDatesAmount(days + 1);
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {

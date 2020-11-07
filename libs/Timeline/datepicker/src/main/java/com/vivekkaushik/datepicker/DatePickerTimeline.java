@@ -98,6 +98,9 @@ public class DatePickerTimeline extends LinearLayout {
     public void setOnDateSelectedListener(OnDateSelectedListener listener) {
         timelineView.setOnDateSelectedListener(listener);
     }
+    public void setDatesAmount(int amount) {
+        timelineView.setDatesAmount(amount);
+    }
 
     /**
      * Set a Start date for the calendar (Default, 1 Jan 1970)
