@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("MainActivityAuth", "auth succeed");
                 intent.putExtra("authToken", authToken);
                 intent.putExtra("studentID", pref.getString("studentID", "errGettingStudIdFromPref"));
+                intent.putExtra("form", pref.getString("form", "errGettingParallelFromPref"));
                 startActivity(intent);
 
 

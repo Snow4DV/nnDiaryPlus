@@ -7,6 +7,8 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.lifecycle.Lifecycle;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -15,16 +17,17 @@ import java.util.Date;
 
 import static androidx.constraintlayout.widget.Constraints.TAG;
 
-public class DiaryPagerAdapter extends FragmentPagerAdapter  {
+public class DiaryPagerAdapter extends FragmentStateAdapter {
 
 
     String authToken, studentID;
     Calendar initDate;
     int amount = 0;
 
-    public DiaryPagerAdapter(@NonNull FragmentManager fm, int behavior) {
-        super(fm, behavior);
+    public DiaryPagerAdapter(@NonNull FragmentManager fragmentManager, @NonNull Lifecycle lifecycle) {
+        super(fragmentManager, lifecycle);
     }
+
     public void setTokenAndId(String authToken, String studentID){
         this.studentID = studentID;
         this.authToken = authToken;
@@ -35,12 +38,12 @@ public class DiaryPagerAdapter extends FragmentPagerAdapter  {
         this.initDate = d;
     }
     @Override
-    public int getCount() {
+    public int getItemCount() {
         return amount;
     }
 
     @Override
-    public Fragment getItem(int position) {
+    public Fragment createFragment(int position) {
         return getFragmentBasedOnPosition(position);
     }
 

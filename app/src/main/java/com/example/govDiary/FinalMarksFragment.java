@@ -2,6 +2,7 @@ package com.example.govDiary;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,7 +11,7 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import android.os.Handler;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -115,22 +116,27 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
 
     @Override
     public void onClick(int position) {
-        //Log.d(TAG, String.valueOf(periodNames.inverse().get(periodNamesList.get(position))));
-        for (int i = 0; i < periodList.size(); i++) {
-            if (i != position) {
-                ((MaterialCardView) (recyclerViewPeriods.findViewHolderForAdapterPosition(i).itemView.findViewById(R.id.cardview))).setCardBackgroundColor(getResources().getColor(R.color.periodButtonColor));
-                ((TextView) (recyclerViewPeriods.findViewHolderForAdapterPosition(i).itemView.findViewById(R.id.textview))).setTextColor(getResources().getColor(R.color.periodButtonTextColor));
-                ((MaterialCardView) (recyclerViewPeriods.findViewHolderForAdapterPosition(i).itemView.findViewById(R.id.cardview))).setStrokeColor(getResources().getColor(R.color.periodButtonStrokeColor));
+        try {
+            //Log.d(TAG, String.valueOf(periodNames.inverse().get(periodNamesList.get(position))));
+            for (int i = 0; i < periodList.size(); i++) {
+                if (i != position) {
+                    ((MaterialCardView) (recyclerViewPeriods.findViewHolderForAdapterPosition(i).itemView.findViewById(R.id.cardview))).setCardBackgroundColor(getResources().getColor(R.color.periodButtonColor));
+                    ((TextView) (recyclerViewPeriods.findViewHolderForAdapterPosition(i).itemView.findViewById(R.id.textview))).setTextColor(getResources().getColor(R.color.periodButtonTextColor));
+                    ((MaterialCardView) (recyclerViewPeriods.findViewHolderForAdapterPosition(i).itemView.findViewById(R.id.cardview))).setStrokeColor(getResources().getColor(R.color.periodButtonStrokeColor));
+                }
             }
+            ((MaterialCardView) (recyclerViewPeriods.findViewHolderForAdapterPosition(position).itemView.findViewById(R.id.cardview))).setCardBackgroundColor(getResources().getColor(R.color.periodButtonColorActive));
+            ((MaterialCardView) (recyclerViewPeriods.findViewHolderForAdapterPosition(position).itemView.findViewById(R.id.cardview))).setStrokeColor(getResources().getColor(R.color.periodButtonStrokeColorActive));
+            ((TextView) (recyclerViewPeriods.findViewHolderForAdapterPosition(position).itemView.findViewById(R.id.textview))).setTextColor(getResources().getColor(R.color.periodButtonTextColorActive));
+            markedLessons.clear();
+            new getMarks(periodList.get(position).startDate, periodList.get(position).endDate).execute();
+            adapterFinalMarks.notifyDataSetChanged();
+            //getMarks gM = new getMarks(periodNames.inverse().get(periodNamesList.get(position)));
+            //gM.execute();
         }
-        ((MaterialCardView) (recyclerViewPeriods.findViewHolderForAdapterPosition(position).itemView.findViewById(R.id.cardview))).setCardBackgroundColor(getResources().getColor(R.color.periodButtonColorActive));
-        ((MaterialCardView) (recyclerViewPeriods.findViewHolderForAdapterPosition(position).itemView.findViewById(R.id.cardview))).setStrokeColor(getResources().getColor(R.color.periodButtonStrokeColorActive));
-        ((TextView) (recyclerViewPeriods.findViewHolderForAdapterPosition(position).itemView.findViewById(R.id.textview))).setTextColor(getResources().getColor(R.color.periodButtonTextColorActive));
-        markedLessons.clear();
-        new getMarks(periodList.get(position).startDate, periodList.get(position).endDate).execute();
-        adapterFinalMarks.notifyDataSetChanged();
-        //getMarks gM = new getMarks(periodNames.inverse().get(periodNamesList.get(position)));
-        //gM.execute();
+        catch(NullPointerException e){
+            Log.e(TAG, "onClick: nullpointer");
+        }
     }
 
     private class getPeriods extends AsyncTask<String, Integer, Void> {
@@ -198,7 +204,18 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
                         Date curDate = Calendar.getInstance().getTime();
                         if(curDate.after(startingDate) && curDate.before(endingDate)){
                             new getMarks(periodList.get(i).startDate, periodList.get(i).endDate).execute();
-
+                            Log.d(TAG, "position period: " + i);
+                            final int counter = i;
+                            final Handler handler = new Handler(Looper.getMainLooper());
+                            handler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ((MaterialCardView) (recyclerViewPeriods.findViewHolderForAdapterPosition(counter).itemView.findViewById(R.id.cardview))).setCardBackgroundColor(getResources().getColor(R.color.periodButtonColorActive));
+                                    ((MaterialCardView) (recyclerViewPeriods.findViewHolderForAdapterPosition(counter).itemView.findViewById(R.id.cardview))).setStrokeColor(getResources().getColor(R.color.periodButtonStrokeColorActive));
+                                    ((TextView) (recyclerViewPeriods.findViewHolderForAdapterPosition(counter).itemView.findViewById(R.id.textview))).setTextColor(getResources().getColor(R.color.periodButtonTextColorActive));
+                                }
+                            }, 50);
+                            break;
                         }
 
                 }

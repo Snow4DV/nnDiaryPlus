@@ -18,6 +18,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.example.govDiary.Api;
+
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -123,6 +125,9 @@ public class DiaryListFragment extends Fragment {
                 response = Api.sendRequest("https://edu.gounn.ru/apiv3/getdiary?student=" + studentID + "&days=" + days + "&rings=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
                 if(response == null) throw new ConnectException();
                 JSONObject jsStud = (new JSONObject(response.body().string())).getJSONObject("response").getJSONObject("result");
+                if((response.code() == 200)) {
+                    //Toast.makeText(getContext(), "В этот день уроки отсутствуют.", Toast.LENGTH_SHORT).show();
+                }
                 if(jsStud.getString("students").equals("null")) throw new IllegalArgumentException();
                 JSONObject js = jsStud.getJSONObject("students").getJSONObject(studentID).getJSONObject("days").getJSONObject((days.split("-"))[0]).getJSONObject("items");
                 for(Iterator<String> iter = js.keys();iter.hasNext();) {
@@ -186,12 +191,7 @@ public class DiaryListFragment extends Fragment {
 
             } catch (IllegalArgumentException e){
                 e.printStackTrace();
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        //Snackbar.make(getActivity().findViewById(android.R.id.content),"Данные за выходной день не могут быть получены.",Snackbar.LENGTH_SHORT).show();
-                    }
-                });
+                Log.d(TAG, "doInBackground: response=null");
 
             }
             catch (ConnectException e){

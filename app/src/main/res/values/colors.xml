@@ -66,6 +66,7 @@
   <color name="periodButtonTextColorActive">@color/accent</color>
   <color name="periodButtonStrokeColor">#e3e2e6</color>
   <color name="periodButtonStrokeColorActive">@color/periodButtonColorActive</color>
+    <color name="icon">#455A64</color>
 
 
 </resources>

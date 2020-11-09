@@ -21,10 +21,18 @@ import com.google.common.collect.TreeMultimap;
 import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.riversun.okhttp3.OkHttp3CookieHelper;
 
 import java.io.IOException;
+import java.net.ConnectException;
+import java.nio.channels.NoConnectionPendingException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.TreeMap;
 
@@ -39,11 +47,11 @@ public class TimetableFragment extends Fragment {
     HashMap<Integer, String> subjects;
     AdapterTimetable adapterTimetable;
     ACProgressFlower loading;
-    ProgressDialog prog;
-    private TreeMap<Integer, TreeMultimap<Integer,String>> lessonsAdapterMap = new TreeMap<>();
+    private TreeMap<Integer, TreeMultimap<Integer, String>> lessonsAdapterMap = new TreeMap<>();
     ArrayList<TimetableLesson> timetableLessons;
-    final Handler handler = new Handler();
-    String IPf, id2f, classidf, student, passf, logf;
+    String weekStart, weekEnd;
+    String authToken, studentID, form;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -58,86 +66,142 @@ public class TimetableFragment extends Fragment {
                 .fadeColor(Color.DKGRAY).build();
         adapterTimetable = new AdapterTimetable(getContext(), lessonsAdapterMap);
         recyclerView.setAdapter(adapterTimetable);
-        logf = getActivity().getIntent().getStringExtra("login");
-        passf = getActivity().getIntent().getStringExtra("password");
+        authToken = getActivity().getIntent().getStringExtra("authToken");
+        studentID = getActivity().getIntent().getStringExtra("studentID");
+        form = getActivity().getIntent().getStringExtra("form");
         //загрузка
-        getActivity().runOnUiThread(new Runnable() {
-            public void run() {
-                //((JournalActivity) getActivity()).getProgressBar().setVisibility(View.VISIBLE);
-            }
-        });
+        Calendar c1 = Calendar.getInstance();
 
-        getTimetable gT = new getTimetable();
-        gT.execute();
+        //first day of week
+        c1.set(Calendar.DAY_OF_WEEK, 1);
+
+        int year1 = c1.get(Calendar.YEAR);
+        int month1 = c1.get(Calendar.MONTH) + 1;
+        int day1 = c1.get(Calendar.DAY_OF_MONTH);
+
+        //last day of week
+        c1.set(Calendar.DAY_OF_WEEK, 7);
+
+        int year7 = c1.get(Calendar.YEAR);
+        int month7 = c1.get(Calendar.MONTH) + 1;
+        int day7 = c1.get(Calendar.DAY_OF_MONTH);
+        weekStart = year1 + "" + String.format("%02d", month1) + "" + String.format("%02d", day1);
+        weekEnd = year7 + "" + String.format("%02d", month7) + "" + String.format("%02d", day7);
+        (new getTimetable()).execute();
         return view;
     }
 
     private class getTimetable extends AsyncTask<String, Integer, Void> {
         @Override
         protected Void doInBackground(String... strings) {
-            String serverAnswer;
-            String url = "http://" + IPf + "/act/GET_TIMETABLE";
-
-            OkHttp3CookieHelper cookieHelper = new OkHttp3CookieHelper();
-            cookieHelper.setCookie(url, "ys-userId", "n%3A" + id2f);
-            cookieHelper.setCookie(url, "ys-user", "s%3A" + StringEscapeUtils.escapeJava(logf).replace("\\", "%"));
-            cookieHelper.setCookie(url, "ys-password", "s%3A" + passf);
-
-            OkHttpClient client =  new OkHttpClient.Builder()
-                    .cookieJar(cookieHelper.cookieJar())
-                    .build();
-
-            Request request = new Request.Builder()
-                    .url(url)
-                    .build();
             try {
-                //получение расписания
-                Response response = client.newCall(request).execute();
-                serverAnswer = response.body().string();
-                serverAnswer = "[" + serverAnswer.substring(2, serverAnswer.length() - 1) + "]";
-                serverAnswer = serverAnswer.replace("\n", "");
-                JSONArray timetable = new JSONArray(serverAnswer);
-                int suitableLessons = 0;
-                for (int i = 0; i < timetable.length(); i++) {
-                    if(timetable.getJSONArray(i).getInt(1) == Integer.parseInt(classidf)) {
-                        timetableLessons.add(new TimetableLesson(subjects.get(timetable.getJSONArray(i).getInt(2)), timetable.getJSONArray(i).getInt(3), timetable.getJSONArray(i).getInt(5),
-                                timetable.getJSONArray(i).getInt(6), timetable.getJSONArray(i).getString(8)));
-                        suitableLessons++;
+                Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/getperiods?weeks=true&show_disabled=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
+                String rString = response.body().string();
+                //at first getting index of current period
+                JSONArray periods = (new JSONObject(rString)).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(0).getJSONArray("periods");
+                int periodNum = 0;
+                for (int i = 0; i < periods.length(); i++) {
+                    String start = periods.getJSONObject(i).getString("start");
+                    String end = periods.getJSONObject(i).getString("end");
+                    Date startDate = new SimpleDateFormat("yyyyMMdd").parse(start);
+                    Date endDate = new SimpleDateFormat("yyyyMMdd").parse(end);
+                    if(Calendar.getInstance().getTime().after(startDate) && Calendar.getInstance().getTime().before(endDate)){
+                        periodNum = i;
+                        break;
                     }
                 }
-                for (int i = 0; i < timetableLessons.size(); i++) {
-                    String roomNum = timetableLessons.get(i).roomNumber;
-                    if(roomNum.equals("")) roomNum = "неизв.";
-                    if(lessonsAdapterMap.containsKey(timetableLessons.get(i).weekday)){
-                        if(timetableLessons.get(i).groupid == 1) lessonsAdapterMap.get(timetableLessons.get(i).weekday).put(timetableLessons.get(i).lessonNumber,"<b>" + timetableLessons.get(i).lessonNumber + " урок" + "</b>" +" - " + timetableLessons.get(i).lessonName + " (" + roomNum + ")<br>");
-                        else lessonsAdapterMap.get(timetableLessons.get(i).weekday).put(timetableLessons.get(i).lessonNumber, "<b>" + timetableLessons.get(i).lessonNumber + " урок, гр. " + timetableLessons.get(i).groupid + "</b>"  + " - " + timetableLessons.get(i).lessonName + " (" + roomNum + ")<br>");
-                    }
-                    else{
-                    TreeMultimap<Integer, String> tempMap = TreeMultimap.create();
-                    if(timetableLessons.get(i).groupid == 1) tempMap.put(timetableLessons.get(i).lessonNumber,"<b>" + timetableLessons.get(i).lessonNumber + " урок" + "</b>" +" - " + timetableLessons.get(i).lessonName + " (" + roomNum + ")<br>");
-                    else tempMap.put(timetableLessons.get(i).lessonNumber, "<b>" + timetableLessons.get(i).lessonNumber + " урок, гр. " + timetableLessons.get(i).groupid + "</b>"  + " - " + timetableLessons.get(i).lessonName + " (" + roomNum + ")<br>");
-                    lessonsAdapterMap.put(timetableLessons.get(i).weekday, tempMap);
+                //getting current week
+                Log.d("TimetableFragment", "doInBackground: " + (new JSONObject(rString)).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(periodNum).toString());
+                JSONArray weeks = (new JSONObject(rString)).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(0).getJSONArray("periods").getJSONObject(periodNum).getJSONArray("weeks");
+                String currentWeekStart = "";
+                String currentWeekEnd = "";
+                Calendar curDateStart = Calendar.getInstance();
+                String curTitle = "";
+                Calendar curDateEnd = Calendar.getInstance();
+                curDateStart.set(Calendar.HOUR_OF_DAY, 0);
+                curDateEnd.set(Calendar.HOUR_OF_DAY, 0);
+                if (response == null) throw new NoConnectionPendingException();
+                for (int i = 0; i < weeks.length(); i++) {
+                    String start = weeks.getJSONObject(i).getString("start");
+                    String end = weeks.getJSONObject(i).getString("end");
+                    String title = weeks.getJSONObject(i).getString("title");
+                    Date startDate = new SimpleDateFormat("yyyyMMdd").parse(start);
+                    Date endDate = new SimpleDateFormat("yyyyMMdd").parse(end);
+                    Date curDate = Calendar.getInstance().getTime();
+                    if(curDate.before(endDate)){
+                        currentWeekEnd = end;
+                        curTitle = title;
+                        currentWeekStart = start;
+                        Log.d("TimetableFragment", "doInBackground: chosen current date is " + currentWeekStart + "/" + currentWeekEnd);
+                        curDateStart.setTime(startDate);
+                        curDateEnd.setTime(endDate);
+                        break;
                     }
                 }
-                Log.d("TAG", "suitableLessons: " + suitableLessons);
-                getActivity().runOnUiThread(new Runnable() {
-                    public void run() {
-                        adapterTimetable.notifyDataSetChanged();
+                Response responseSchedule = Api.sendRequest("https://edu.gounn.ru/apiv3/getschedule?student=" + studentID  + "&days=" + currentWeekStart + "-" + currentWeekEnd + "&class=" + form + "&rings=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
+                String responseScheduleStr = responseSchedule.body().string();
+                ArrayList<TimetableDays> timetableDays = new ArrayList<>();
+                for(; curDateStart.compareTo(curDateEnd)<=0; curDateStart.add(Calendar.DATE, 1)) {
+                    try {
+                        String curDate = (new SimpleDateFormat("yyyyMMdd")).format(curDateStart.getTime());
+                        Log.d("Timetable fragment", "this week day:" + curDate);
+                        JSONObject day = (new JSONObject(responseScheduleStr)).getJSONObject("response").getJSONObject("result").getJSONObject("days").getJSONObject(curDate);
+                        JSONArray items = day.getJSONArray("items");
+                        ArrayList<TimetableLesson> lessons = new ArrayList<>();
+                        String title = day.getString("title");
+                        for (int i = 0; i < items.length(); i++) {
+                            String lessonName = "";
+                            String lessonNum = "";
+                            String lessonRoom = "";
+                            String teacher = "";
+                            String group = "";
+                            try {
+                                lessonName = items.getJSONObject(i).getString("name");
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                            try {
+                                lessonNum = items.getJSONObject(i).getString("num");
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                            try {
+                                lessonRoom = items.getJSONObject(i).getString("room");
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                            try {
+                                teacher = items.getJSONObject(i).getString("teacher");
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                            try {
+                                group = items.getJSONObject(i).getString("grp");
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                            lessons.add(new TimetableLesson(lessonName, lessonNum, lessonRoom, teacher, group));
+                        }
+                        timetableDays.add(new TimetableDays(title, curTitle, lessons));
                     }
-                });
-            } catch (IOException | JSONException e) {
-                e.printStackTrace();
+                    catch(Exception ex){
+                        ex.printStackTrace();
+                    }
+
+                }
+                if(responseSchedule == null) throw new ConnectException();
+                responseSchedule.close();
+                response.close();
             }
-            getActivity().runOnUiThread(new Runnable() {
-                public void run() {
-                    //((JournalActivity) getActivity()).getProgressBar().setVisibility(View.GONE);
-                }
-            });
+            catch(Exception ex){
+                ex.printStackTrace();
+            }
 
 
             return null;
 
-        }
-    }
 
+        }
+
+    }
 }

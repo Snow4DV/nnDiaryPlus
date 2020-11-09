@@ -109,8 +109,8 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
                 .build();
         //creating drawer
         PrimaryDrawerItem item1 = new PrimaryDrawerItem().withIdentifier(1).withName("Дневник").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_dairy));
-        PrimaryDrawerItem item2 = new PrimaryDrawerItem().withName("Расписание").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_timetable));
-        PrimaryDrawerItem item3 = new PrimaryDrawerItem().withName("Итоговые оценки").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_marks));
+        PrimaryDrawerItem item2 = new PrimaryDrawerItem().withIdentifier(2).withName("Расписание").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_timetable));
+        PrimaryDrawerItem item3 = new PrimaryDrawerItem().withIdentifier(3).withName("Итоговые оценки").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_marks));
         SecondaryDrawerItem item4 = new SecondaryDrawerItem().withName("Настройки").withIconTintingEnabled(true).withSelectable(false).withIcon(getDrawable(R.drawable.ic_settings));
         SecondaryDrawerItem item5 = new SecondaryDrawerItem().withName("Выход из аккаунта").withIconTintingEnabled(true).withSelectable(false).withIcon(getDrawable(R.drawable.ic_logout));
         drawer = new DrawerBuilder().withActivity(this).withToolbar(toolBar).withAccountHeader(headerResult).addDrawerItems(
@@ -174,6 +174,7 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
     }
 
 
+
     @Override
     public void onBackPressed()
     {
@@ -211,7 +212,8 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
 
     @Override
     protected void onResume() {
-        drawer.setSelection(1,false);
+        drawer.setSelection(runningActivity,false);
+        Log.d(TAG, "onResume: setting selected pos on drawer to " + runningActivity);
         super.onResume();
 
     }

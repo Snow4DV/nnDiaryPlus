@@ -126,9 +126,11 @@ public class LoginActivity extends AppCompatActivity {
                         String mName = jsRules.getJSONObject("response").getJSONObject("result").getString("firstname");
                         String fName = jsRules.getJSONObject("response").getJSONObject("result").getString("middlename");
                         String studentID = jsRules.getJSONObject("response").getJSONObject("result").getString("id");
+                        String form = jsRules.getJSONObject("response").getJSONObject("result").getJSONObject("relations").getJSONObject("students").getJSONObject(studentID).getString("class");
                         Log.d("LoginActivity", "Token received: " + token);
                         intent.putExtra("name", lName + " " + mName + " " + fName);
                         editor.putString("authToken", token);
+                        editor.putString("form", form);
                         editor.putString("studentID", studentID);
                         editor.putString("rulesJson", rulesJsonPlainString);
                         editor.putString("timeToExpire", timeToExpire);
@@ -136,9 +138,10 @@ public class LoginActivity extends AppCompatActivity {
                         //putting these to intent
                         intent.putExtra("authToken", token);
                         intent.putExtra("studentID", studentID);
+                        intent.putExtra("form", form);
                         Log.d("LoginActivity", "FIO received: " + lName + " " + mName + " " + fName);
                         //получаем название школы
-                        String schoolName = jsRules.getJSONObject("response").getJSONObject("result").getJSONObject("relations").getJSONArray("schools").getJSONObject(0).getString("title");
+                        String schoolName = jsRules.getJSONObject("response").getJSONObject("result").getJSONObject("relations").getJSONArray("schools").getJSONObject(0).getString("title") + ", " + form;
                         String schoolClass = "";
                         Iterator<String> iter = jsRules.getJSONObject("response").getJSONObject("result").getJSONObject("relations").getJSONObject("groups").keys();
                         for(;iter.hasNext();) {
