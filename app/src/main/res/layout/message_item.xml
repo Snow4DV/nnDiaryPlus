@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/message_card"
+    android:layout_margin="5dp"
+    android:clickable="true"
+    android:layout_width="match_parent"
+    app:cardCornerRadius="15dp"
+    android:layout_height="wrap_content"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:focusable="true">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/card_padding">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            app:cardCornerRadius="20dp"
+            android:id="@+id/cardViewAvatar"
+            >
+        <ImageView
+            android:id="@+id/avatar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@android:drawable/toast_frame"
+            android:contentDescription="Аватар" />
+
+        </androidx.cardview.widget.CardView>
+        <TextView
+            android:id="@+id/sender"
+            android:layout_marginLeft="@dimen/card_padding"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/cardViewAvatar"
+            android:layout_toLeftOf="@id/date"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Отправитель" />
+        <TextView
+            android:id="@+id/subject"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/sender"
+            android:layout_alignLeft="@+id/sender"
+            android:layout_toLeftOf="@id/fileAttached"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Топик"/>
+        <TextView
+            android:id="@+id/brief"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/subject"
+            android:layout_alignLeft="@+id/subject"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:layout_toLeftOf="@id/fileAttached"
+            android:text="Предпросмотр сообщения..."/>
+        <TextView
+            android:id="@+id/date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:maxLines="1"
+            android:text="32 января"/>
+        <ImageView
+            android:id="@+id/fileAttached"
+            android:visibility="gone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_below="@+id/subject"
+            android:src="@drawable/ic_baseline_attach_file_24" />
+
+    </RelativeLayout>
+
+
+</androidx.cardview.widget.CardView>
+</RelativeLayout>

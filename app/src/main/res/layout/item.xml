@@ -8,6 +8,8 @@
 
     <FrameLayout
         android:layout_width="match_parent"
+        android:paddingStart="2dp"
+        android:paddingEnd="2dp"
         android:layout_height="match_parent">
 
 
@@ -89,6 +91,7 @@
                         android:layout_height="wrap_content"
                         android:autoLink="web"
                         android:paddingStart="7dp"
+                        android:paddingEnd="7dp"
                         android:paddingTop="-10dp"
                         android:text="Homework example"
                         android:textColor="?android:attr/textColorPrimary"
@@ -111,6 +114,11 @@
                         android:visibility="gone"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
+                    <LinearLayout
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:id="@+id/linearFiles"
+                        android:orientation="vertical" />
                     <Space
                         android:id="@+id/spaceItem"
                         android:layout_width="match_parent"

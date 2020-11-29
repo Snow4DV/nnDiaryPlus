@@ -8,8 +8,8 @@
     android:layout_height="wrap_content"
     android:paddingStart="16dp"
     android:paddingEnd="16dp"
-    android:paddingTop="3dp"
-    android:paddingBottom="3dp">
+    android:paddingTop="1dp"
+    android:paddingBottom="1dp">
 
     <TextView
         android:id="@+id/monthView"
@@ -28,7 +28,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="5dp"
+        android:layout_marginTop="1dp"
         android:gravity="center"
         android:maxLength="2"
         android:maxLines="1"
@@ -43,7 +43,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="5dp"
+        android:layout_marginTop="1dp"
         android:ellipsize="end"
         android:gravity="center_horizontal"
         android:maxLines="1"

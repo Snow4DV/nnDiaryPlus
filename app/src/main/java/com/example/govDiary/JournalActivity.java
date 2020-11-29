@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +22,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -35,6 +37,9 @@ import androidx.work.WorkManager;
 
 import com.amulyakhare.textdrawable.TextDrawable;
 import com.amulyakhare.textdrawable.util.ColorGenerator;
+import com.google.android.material.bottomnavigation.BottomNavigationMenu;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.internal.NavigationMenuView;
 import com.google.android.material.snackbar.Snackbar;
 import com.mikepenz.materialdrawer.AccountHeader;
 import com.mikepenz.materialdrawer.AccountHeaderBuilder;
@@ -46,7 +51,10 @@ import com.mikepenz.materialdrawer.model.ProfileDrawerItem;
 import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
+import org.json.JSONObject;
+
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
 
@@ -58,12 +66,15 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
     String studentFIO;
     View mTooltipView;
     Drawer drawer;
+    LinkedHashMap<String, JSONObject> daysJSON;
     int runningActivity = 1;
     FragmentTransaction ft2 = null;
     FinalMarksFragment finalMarksFragment;
     TimetableFragment timetableFragment;
     FragmentManager myFragmentManager;
+    MessagesTabFragment messagesTabFragment;
     TextView title;
+    BottomNavigationView buttomNavigationMenu;
     final static String TAG_1 = "FRAGMENT_1";
     DairyFragment dairyFragment;
     String TAG = "JorunalActivity";
@@ -75,10 +86,41 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        daysJSON = new LinkedHashMap<>();
         pref = getApplicationContext().getSharedPreferences("LogData", Context.MODE_PRIVATE); // saving data of application
         editor = pref.edit();
         setContentView(R.layout.activity_journal);
-        context = getApplicationContext();
+        buttomNavigationMenu = findViewById(R.id.bottomNavigationView);
+        buttomNavigationMenu.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                int index;
+                switch(item.getItemId()){
+                    case R.id.homemenu:
+                        index = 1;
+                        break;
+                    case R.id.diarymenu:
+                        index = 1;
+                        break;
+                    case R.id.timetablemenu:
+                        index = 2;
+                        break;
+                    case R.id.fmarksmenu:
+                        index = 3;
+                        break;
+                    case R.id.messagesmenu:
+                        index = 4;
+                        break;
+                    default:
+                        index = 1;
+                        break;
+                }
+                drawer.setSelection(index, false);
+                materialDrawerItemClickHolder(index);
+                return true;
+            }
+        });
+                context = getApplicationContext();
         multibutton = findViewById(R.id.multibutton);
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         myFragmentManager = getSupportFragmentManager();
@@ -96,7 +138,7 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
         //Getting the drawable icon with letter inside
         ColorGenerator generator = ColorGenerator.MATERIAL;
         TextDrawable drawable = TextDrawable.builder()
-                .buildRect(String.valueOf((char)studentFIO.split(" ")[1].charAt(0)), generator.getColor("studentFIO"));
+                .buildRect(String.valueOf((char)studentFIO.split(" ")[1].charAt(0)), generator.getColor((char)studentFIO.split(" ")[1].charAt(0)));
 
         // Create the AccountHeader
         AccountHeader headerResult = new AccountHeaderBuilder()
@@ -113,16 +155,32 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
         PrimaryDrawerItem item3 = new PrimaryDrawerItem().withIdentifier(3).withName("Итоговые оценки").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_marks));
         SecondaryDrawerItem item4 = new SecondaryDrawerItem().withName("Настройки").withIconTintingEnabled(true).withSelectable(false).withIcon(getDrawable(R.drawable.ic_settings));
         SecondaryDrawerItem item5 = new SecondaryDrawerItem().withName("Выход из аккаунта").withIconTintingEnabled(true).withSelectable(false).withIcon(getDrawable(R.drawable.ic_logout));
+        PrimaryDrawerItem item6 = new PrimaryDrawerItem().withIdentifier(4).withName("Сообщения").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_baseline_message_24));
         drawer = new DrawerBuilder().withActivity(this).withToolbar(toolBar).withAccountHeader(headerResult).addDrawerItems(
                 item1,
                 item2,
                 item3,
+                item6,
                 new DividerDrawerItem(),
                 item4,
                 item5
         ) .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
             @Override
             public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
+                switch(position){
+                    case 1:
+                        buttomNavigationMenu.setSelectedItemId(R.id.diarymenu);
+                        break;
+                    case 2:
+                        buttomNavigationMenu.setSelectedItemId(R.id.timetablemenu);
+                        break;
+                    case 3:
+                        buttomNavigationMenu.setSelectedItemId(R.id.fmarksmenu);
+                        break;
+                    case 4:
+                        buttomNavigationMenu.setSelectedItemId(R.id.messagesmenu);
+                        break;
+                }
                return materialDrawerItemClickHolder(position);
             }
         })
@@ -207,6 +265,9 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
                     });
             alertDialog.show();
         }
+        else if(runningActivity == 4){
+            messagesTabFragment.refreshMessages();
+        }
     }
 
 
@@ -236,9 +297,9 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
 
     private boolean materialDrawerItemClickHolder(int position){
 
-
+        Log.d(TAG, "materialDrawerItemClickHolder: fired");
             ft2 = getSupportFragmentManager().beginTransaction();
-            if(position == 1 || position == 2 || position == 3) {
+            if(position == 1 || position == 2 || position == 3 || position == 4) {
                 runningActivity = position;
                 if (position == 1) {
                     multibutton.setVisibility(View.VISIBLE);
@@ -246,37 +307,36 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
                 } else if (position == 3) {
                     multibutton.setVisibility(View.VISIBLE);
                     multibutton.setImageResource((R.drawable.ic_info));
-                } else multibutton.setVisibility(View.GONE);
+                }
+                else if(position == 4){
+                    multibutton.setVisibility(View.VISIBLE);
+                    multibutton.setImageResource((R.drawable.ic_baseline_refresh_24));
+                }
+                else multibutton.setVisibility(View.GONE);
             }
             //Toast.makeText(JournalActivity.this, position + "d", Toast.LENGTH_SHORT).show();
             switch(position){
                 case 1:
                     titleToolbar.setText("Дневник");
+                    if(dairyFragment == null)
                     dairyFragment = new DairyFragment();
                     if(!dairyFragment.isAdded()) {
-                        for (Fragment fragment : getSupportFragmentManager().getFragments()) {
-                            ft2.remove(fragment);
-                        }
-                        ft2.add(R.id.dairy_fragment, dairyFragment);
+                        ft2.replace(R.id.dairy_fragment, dairyFragment);
                         ft2.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_CLOSE);
-                        ft2.detach(dairyFragment).attach(dairyFragment);
                         ft2.commit();
                     }
                     return true;
                 case 3:
                     titleToolbar.setText("Итоговые оценки");
+                    //if(finalMarksFragment == null)
                     finalMarksFragment = new FinalMarksFragment();
                     if(!finalMarksFragment.isAdded()) {
-                        for (Fragment fragment : getSupportFragmentManager().getFragments()) {
-                            ft2.remove(fragment);
-                        }
-                        ft2.add(R.id.dairy_fragment, finalMarksFragment);
+                        ft2.replace(R.id.dairy_fragment, finalMarksFragment);
                         ft2.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_CLOSE);
-                        ft2.detach(finalMarksFragment).attach(finalMarksFragment);
                         ft2.commit();
                     }
                     return true;
-                case 6:
+                case 7:
                     editor.putString("loginStatus", "fail");
                     editor.apply();
                     Intent intent = new Intent(JournalActivity.this, LoginActivity.class);
@@ -284,18 +344,15 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
                     break;
                 case 2:
                     titleToolbar.setText("Расписание");
+                    if(timetableFragment == null)
                     timetableFragment = new TimetableFragment();
                     if(!timetableFragment.isAdded()) {
-                        for (Fragment fragment : getSupportFragmentManager().getFragments()) {
-                            ft2.remove(fragment);
-                        }
-                        ft2.add(R.id.dairy_fragment, timetableFragment);
+                        ft2.replace(R.id.dairy_fragment, timetableFragment);
                         ft2.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_CLOSE);
-                        ft2.detach(timetableFragment).attach(timetableFragment);
                         ft2.commit();
                     }
                     break;
-                case 5:
+                case 6:
                     FragmentTransaction ft3 = getSupportFragmentManager().beginTransaction();
                     Fragment prev = getSupportFragmentManager().findFragmentByTag("dialog");
                     if (prev != null) {
@@ -305,6 +362,15 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
                     SettingsFragment sF = new SettingsFragment();
                     //sF.setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog); causes dialog not to show. idk why
                     sF.show(ft3, "dialog");
+                    break;
+                case 4:
+                        messagesTabFragment = new MessagesTabFragment();
+                    titleToolbar.setText("Сообщения");
+                    if(!messagesTabFragment.isAdded()){
+                        ft2.replace(R.id.dairy_fragment, messagesTabFragment);
+                        ft2.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_CLOSE);
+                        ft2.commit();
+                    }
                     break;
                 default:
                     Toast.makeText(JournalActivity.this, "Функция в разработке или произошла ошибка", Toast.LENGTH_SHORT).show();

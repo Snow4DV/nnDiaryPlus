@@ -13,48 +13,24 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.example.govDiary.Api;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.google.android.material.snackbar.Snackbar;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonParser;
-import com.vivekkaushik.datepicker.DatePickerTimeline;
-import com.vivekkaushik.datepicker.OnDateSelectedListener;
-
-import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-import org.riversun.okhttp3.OkHttp3CookieHelper;
 
-import java.io.IOException;
 import java.net.ConnectException;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Locale;
+import java.util.LinkedHashMap;
 import java.util.Objects;
 
-import okhttp3.FormBody;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import static androidx.constraintlayout.widget.Constraints.TAG;
@@ -72,6 +48,8 @@ public class DiaryListFragment extends Fragment {
     ArrayList<Lesson> items;
 
     DatePickerDialog.OnDateSetListener onDateSetListener;
+    private AsyncTask<String, Integer, Void> getDairyAsyncTask;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -84,7 +62,7 @@ public class DiaryListFragment extends Fragment {
         authToken = getArguments().getString("authToken");
         studentID = getArguments().getString("studentID");
         paramDays = getArguments().getString("days");
-        new getDairy(getArguments().getString("days")).execute();
+        getDairyAsyncTask = new getDairy(getArguments().getString("days"), getArguments().getString("daysMinus7"), getArguments().getString("daysPlus7"), getArguments().getStringArrayList("daysList")).execute();
         //datePickerTimeline = dairyFragmentView.findViewById(R.id.datePickerTimeline); //TODO
         //TODO: datePickerTimeline.setActiveDate(cal);
         //datePickerTimeline.setInitialDate(2020,5,10);
@@ -99,37 +77,77 @@ public class DiaryListFragment extends Fragment {
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                new getDairy(getArguments().getString("days")).execute();
+                getDairyAsyncTask = new getDairy(getArguments().getString("days"), getArguments().getString("daysMinus7"), getArguments().getString("daysPlus7"), getArguments().getStringArrayList("daysList"), true).execute();
             }
         });
-        new getDairy(getArguments().getString("days")).execute();
+        getDairyAsyncTask = new getDairy(getArguments().getString("days"), getArguments().getString("daysMinus7"), getArguments().getString("daysPlus7"), getArguments().getStringArrayList("daysList")).execute();
         swipeRefreshLayout.setRefreshing(true);
         return dairyFragmentView;
     }
 
+    @Override
+    public void onPause() {
+        if(getDairyAsyncTask != null)
+            getDairyAsyncTask.cancel(true);
+        super.onPause();
+    }
 
+    @Override
+    public void onStop() {
+        if(getDairyAsyncTask != null)
+            getDairyAsyncTask.cancel(true);
+        super.onStop();
+    }
 
 
     private class getDairy extends AsyncTask<String, Integer, Void> {
-        String days;
+        String day, daysMin7, daysPlus7;
         Response response;
-        public getDairy(String d) {
+        ArrayList<String> daysL;
+        boolean ifReloading = false;
+        public getDairy(String d, String dMinus7, String dPlus7, ArrayList<String> daysList) {
             super();
-            days = d;
+            daysL = daysList;
+            day = d;
+            daysMin7 = dMinus7;
+            daysPlus7 = dPlus7;
+        }
+        public getDairy(String d, String dMinus7, String dPlus7, ArrayList<String> daysList, boolean ifReloading) {
+            super();
+            daysL = daysList;
+            this.ifReloading = ifReloading;
+            day = d;
+            daysMin7 = dMinus7;
+            daysPlus7 = dPlus7;
         }
         @Override
         protected Void doInBackground(String... strings) {
             try {
                 swipeRefreshLayout.setRefreshing(true);
                 items.clear();
-                response = Api.sendRequest("https://edu.gounn.ru/apiv3/getdiary?student=" + studentID + "&days=" + days + "&rings=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
-                if(response == null) throw new ConnectException();
-                JSONObject jsStud = (new JSONObject(response.body().string())).getJSONObject("response").getJSONObject("result");
-                if((response.code() == 200)) {
-                    //Toast.makeText(getContext(), "В этот день уроки отсутствуют.", Toast.LENGTH_SHORT).show();
+                JSONObject js;
+                if(((JournalActivity)getActivity()).daysJSON.containsKey(day) && !ifReloading){
+                    js = ((JournalActivity)getActivity()).daysJSON.get(day);
                 }
-                if(jsStud.getString("students").equals("null")) throw new IllegalArgumentException();
-                JSONObject js = jsStud.getJSONObject("students").getJSONObject(studentID).getJSONObject("days").getJSONObject((days.split("-"))[0]).getJSONObject("items");
+                else {
+                    response = Api.sendRequest("https://edu.gounn.ru/apiv3/getdiary?student=" + studentID + "&days=" + daysMin7 + "-" + daysPlus7 + "&rings=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
+
+                    if (response == null) throw new ConnectException();
+                    JSONObject jsStud = (new JSONObject(response.body().string())).getJSONObject("response").getJSONObject("result");
+                    for (String dayString : daysL) {
+                        try {
+                            ((JournalActivity) getActivity()).daysJSON.put(dayString, jsStud.getJSONObject("students").getJSONObject(studentID).getJSONObject("days").getJSONObject(dayString).getJSONObject("items"));
+                        } catch (Exception ex) {
+
+                        }
+                    }
+                    if ((response.code() == 200)) {
+                        //Toast.makeText(getContext(), "В этот день уроки отсутствуют.", Toast.LENGTH_SHORT).show();
+                    }
+                    if (jsStud.getString("students").equals("null"))
+                        throw new IllegalArgumentException();
+                    js = jsStud.getJSONObject("students").getJSONObject(studentID).getJSONObject("days").getJSONObject(day).getJSONObject("items");
+                }
                 for(Iterator<String> iter = js.keys();iter.hasNext();) {
                     String key = iter.next();
                     Log.d(TAG, "doInBackground: keys of js: " + key);
@@ -141,19 +159,31 @@ public class DiaryListFragment extends Fragment {
                     if(js.getJSONObject(key).has("homework")) {
                         JSONObject homework = js.getJSONObject(key).getJSONObject("homework");
                         //iterating through hw
+
                         for (Iterator<String> iter2 = homework.keys(); iter2.hasNext(); ) {
+                            if(homeworkString.equals("null")) homeworkString = "";
                             String hwKey = iter2.next();
-                            homeworkString = "";
+
                             boolean ifIndividual = homework.getJSONObject(hwKey).getBoolean("individual");
-                            Log.d(TAG, "doInBackground: keys of hw: " + hwKey);
                             if (!ifIndividual) {
                                 homeworkString += homework.getJSONObject(hwKey).getString("value") + ", ";
+                                Log.d(TAG, "doInBackground: got hw " + homeworkString);
                             } else {
                                 homeworkString += homework.getJSONObject(hwKey).getString("value") + " - индивидуальное задание" + ", ";
+                                Log.d(TAG, "doInBackground: got individual hw " + homeworkString);
                             }
                         }
                         if (!homeworkString.equals("null")) {
+                            Log.d(TAG, "doInBackground: resulting hw string is " + homeworkString);
                             homeworkString = homeworkString.substring(0, homeworkString.length() - 2);
+                        }
+                    }
+                    LinkedHashMap<String, String> filesMap = null;
+                    if(js.getJSONObject(key).has("files")) {
+                        filesMap = new LinkedHashMap<>();
+                        JSONArray files = js.getJSONObject(key).getJSONArray("files");
+                        for (int i = 0; i < files.length(); i++) {
+                            filesMap.put(files.getJSONObject(i).getString("filename"), files.getJSONObject(i).getString("link"));
                         }
                     }
                     //iterating through marks
@@ -184,8 +214,9 @@ public class DiaryListFragment extends Fragment {
                             markStr = markStr.substring(0, markStr.length() - 2);
                         }
                     }
+
                     //adding to items
-                    items.add(new Lesson(lessonName, teacher, homeworkString, Integer.parseInt(lessonNumber), markStr));
+                    items.add(new Lesson(lessonName, teacher, homeworkString, Integer.parseInt(lessonNumber), markStr, filesMap));
 
                 }
 
@@ -206,12 +237,6 @@ public class DiaryListFragment extends Fragment {
             }
             catch (Exception e) {
                 e.printStackTrace();
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        //Snackbar.make(getActivity().findViewById(android.R.id.content),"Произошла ошибка. Попробуйте еще раз.",Snackbar.LENGTH_SHORT).show();
-                    }
-                });
                 Log.e("TAG", "getDiary: " + "JSON/IO ex");
             }
             new Handler(Looper.getMainLooper()).post(new Runnable() {
@@ -231,17 +256,7 @@ public class DiaryListFragment extends Fragment {
             }
             catch(NullPointerException e){
                 e.printStackTrace();
-                try {
-                    Objects.requireNonNull(getActivity()).runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            //Snackbar.make(getActivity().findViewById(android.R.id.content), "Произошла ошибка. Попробуйте еще раз.", Snackbar.LENGTH_SHORT).show();
-                        }
-                    });
-                }
-                catch(NullPointerException e2){
-                    e2.printStackTrace();
-                }
+
             }
 
             editor.apply();
@@ -253,7 +268,7 @@ public class DiaryListFragment extends Fragment {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            lastDays = days;
+            lastDays = day;
             swipeRefreshLayout.setRefreshing(false);
             adapter.notifyDataSetChanged();
             try {
@@ -265,11 +280,14 @@ public class DiaryListFragment extends Fragment {
         }
     }
 
-    public static DiaryListFragment newDiaryFragmentInstance(String authToken, String studentID, String days){
+    public static DiaryListFragment newDiaryFragmentInstance(String authToken, String studentID, String days, String daysBefore7Days, String daysAfter7Days, ArrayList<String> dates){
         Bundle bundle = new Bundle();
         bundle.putString("authToken", authToken);
         bundle.putString("studentID", studentID);
         bundle.putString("days", days);
+        bundle.putStringArrayList("daysList", dates);
+        bundle.putString("daysMinus7", daysBefore7Days);
+        bundle.putString("daysPlus7", daysAfter7Days);
         DiaryListFragment diaryListFragment = new DiaryListFragment();
         diaryListFragment.setArguments(bundle);
         return diaryListFragment;

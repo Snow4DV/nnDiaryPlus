@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/homemenu"
+        android:title="Дом"
+        android:icon="@drawable/ic_homescreen"/>
+    <item
+        android:id="@+id/diarymenu"
+        android:title="Дневник"
+        android:icon="@drawable/ic_dairy"/>
+    <item
+        android:id="@+id/timetablemenu"
+        android:title="Расписание"
+        android:icon="@drawable/ic_timetable"/>
+    <item
+        android:id="@+id/fmarksmenu"
+        android:title="Итоговые оценки"
+        android:icon="@drawable/ic_marks"/>
+    <item
+        android:id="@+id/messagesmenu"
+        android:title="Сообщения"
+        android:icon="@drawable/ic_baseline_message_24"/>
+</menu>

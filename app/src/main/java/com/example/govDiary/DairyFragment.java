@@ -52,6 +52,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -81,9 +82,12 @@ public class DairyFragment extends Fragment {
     ViewPager2 viewPager;
     boolean loadingFinished = false;
     ArrayList<Lesson> items;
+
     Calendar dateAndTime;
     DatePickerTimeline datePickerTimeline;
     DatePickerDialog.OnDateSetListener onDateSetListener;
+    private AsyncTask<String, Integer, Void> dairyAsyncTask;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -131,7 +135,7 @@ public class DairyFragment extends Fragment {
         initColors();
 
         //TODO:new getDairy(year + "" + String.format("%02d", month + 1) + "" + String.format("%02d", day) + "-" + year + "" + String.format("%02d", month + 1) + "" + String.format("%02d", day)).execute();
-        (new getPeriods(authToken)).execute();
+        dairyAsyncTask = new getPeriods(authToken).execute();
         return dairyFragmentView;
     }
 
@@ -150,7 +154,12 @@ public class DairyFragment extends Fragment {
     }
     }
 
-
+    @Override
+    public void onPause() {
+        if(dairyAsyncTask != null)
+        dairyAsyncTask.cancel(true);
+        super.onPause();
+    }
 
     public void setDateToDatePicker(Calendar date){
         Log.d(TAG, "setDateToDatePicker: got " + date.getTime().toString());
@@ -196,7 +205,17 @@ public class DairyFragment extends Fragment {
                     int days = (int) TimeUnit.DAYS.convert(yearEndDate.getTime() - yearStartDate.getTime(), TimeUnit.MILLISECONDS);
                     int currentDay = (int) TimeUnit.DAYS.convert(Calendar.getInstance().getTime().getTime() - yearStartDate.getTime(), TimeUnit.MILLISECONDS);
                     periodsLoaded = true;
-                    progressBar.setVisibility(View.INVISIBLE);
+                    if(getActivity() == null) {
+                        this.cancel(true);
+                        break;
+                    }
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            progressBar.setVisibility(View.INVISIBLE);
+                        }
+                    });
+
                     diaryPagerAdapter = new DiaryPagerAdapter(((AppCompatActivity)context).getSupportFragmentManager(), getLifecycle());
                     diaryPagerAdapter.setTokenAndId(authToken, studentID);
                     Calendar initCal = Calendar.getInstance();
@@ -207,6 +226,7 @@ public class DairyFragment extends Fragment {
                     ((AppCompatActivity)context).runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+
                             datePickerTimeline.setDatesAmount(days + 1);
                             viewPager.setAdapter(diaryPagerAdapter);
                             viewPager.setCurrentItem(currentDay, false);

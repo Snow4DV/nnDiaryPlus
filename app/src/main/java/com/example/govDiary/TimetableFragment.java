@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.common.collect.TreeMultimap;
 
@@ -34,6 +35,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.TreeMap;
 
 import cc.cloudist.acplibrary.ACProgressConstant;
@@ -43,28 +45,37 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class TimetableFragment extends Fragment {
+    private static final String TAG = "TimetableFragment";
     RecyclerView recyclerView;
-    HashMap<Integer, String> subjects;
     AdapterTimetable adapterTimetable;
+    SwipeRefreshLayout swipeRefreshLayout;
     ACProgressFlower loading;
-    private TreeMap<Integer, TreeMultimap<Integer, String>> lessonsAdapterMap = new TreeMap<>();
-    ArrayList<TimetableLesson> timetableLessons;
+    ArrayList<TimetableDays> timetableDays;
     String weekStart, weekEnd;
     String authToken, studentID, form;
+    private AsyncTask<String, Integer, Void> getTimetableAsyncTask;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.timetable_fragment, container, false);
-        timetableLessons = new ArrayList<>();
+        timetableDays = new ArrayList<>();
         recyclerView = view.findViewById(R.id.recyclerView);
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+        swipeRefreshLayout.setRefreshing(true);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                getTimetableAsyncTask = new getTimetable().execute();
+            }
+        });
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         loading = new ACProgressFlower.Builder(getContext())
                 .direction(ACProgressConstant.DIRECT_CLOCKWISE)
                 .themeColor(Color.WHITE)
                 .text("Загрузка...")
                 .fadeColor(Color.DKGRAY).build();
-        adapterTimetable = new AdapterTimetable(getContext(), lessonsAdapterMap);
+        adapterTimetable = new AdapterTimetable(getActivity(), timetableDays);
         recyclerView.setAdapter(adapterTimetable);
         authToken = getActivity().getIntent().getStringExtra("authToken");
         studentID = getActivity().getIntent().getStringExtra("studentID");
@@ -87,11 +98,17 @@ public class TimetableFragment extends Fragment {
         int day7 = c1.get(Calendar.DAY_OF_MONTH);
         weekStart = year1 + "" + String.format("%02d", month1) + "" + String.format("%02d", day1);
         weekEnd = year7 + "" + String.format("%02d", month7) + "" + String.format("%02d", day7);
-        (new getTimetable()).execute();
+        getTimetableAsyncTask = new getTimetable().execute();
         return view;
     }
 
     private class getTimetable extends AsyncTask<String, Integer, Void> {
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            swipeRefreshLayout.setRefreshing(false);
+            super.onPostExecute(aVoid);
+        }
+
         @Override
         protected Void doInBackground(String... strings) {
             try {
@@ -105,7 +122,7 @@ public class TimetableFragment extends Fragment {
                     String end = periods.getJSONObject(i).getString("end");
                     Date startDate = new SimpleDateFormat("yyyyMMdd").parse(start);
                     Date endDate = new SimpleDateFormat("yyyyMMdd").parse(end);
-                    if(Calendar.getInstance().getTime().after(startDate) && Calendar.getInstance().getTime().before(endDate)){
+                    if(Calendar.getInstance().getTime().after(startDate) && Calendar.getInstance().getTime().before(endDate)){  //TODO: IF NOT FOUND- CHOOSE THE CLOSEST DATE!!!!!!!!!!
                         periodNum = i;
                         break;
                     }
@@ -140,7 +157,7 @@ public class TimetableFragment extends Fragment {
                 }
                 Response responseSchedule = Api.sendRequest("https://edu.gounn.ru/apiv3/getschedule?student=" + studentID  + "&days=" + currentWeekStart + "-" + currentWeekEnd + "&class=" + form + "&rings=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
                 String responseScheduleStr = responseSchedule.body().string();
-                ArrayList<TimetableDays> timetableDays = new ArrayList<>();
+                timetableDays.clear();
                 for(; curDateStart.compareTo(curDateEnd)<=0; curDateStart.add(Calendar.DATE, 1)) {
                     try {
                         String curDate = (new SimpleDateFormat("yyyyMMdd")).format(curDateStart.getTime());
@@ -148,8 +165,11 @@ public class TimetableFragment extends Fragment {
                         JSONObject day = (new JSONObject(responseScheduleStr)).getJSONObject("response").getJSONObject("result").getJSONObject("days").getJSONObject(curDate);
                         JSONArray items = day.getJSONArray("items");
                         ArrayList<TimetableLesson> lessons = new ArrayList<>();
-                        String title = day.getString("title");
+                        String title = day.getString("title"); //Название дня
+                        ArrayList<String> nonRepeatingNumsList = new ArrayList<>();
+
                         for (int i = 0; i < items.length(); i++) {
+                            boolean repeatingNum = false;
                             String lessonName = "";
                             String lessonNum = "";
                             String lessonRoom = "";
@@ -158,38 +178,58 @@ public class TimetableFragment extends Fragment {
                             try {
                                 lessonName = items.getJSONObject(i).getString("name");
                             } catch (Exception ex) {
-                                ex.printStackTrace();
+                                Log.d("TimetableFragmentThread", "name - skipped(" + i + ")");
                             }
                             try {
                                 lessonNum = items.getJSONObject(i).getString("num");
+                                if(nonRepeatingNumsList.contains(lessonNum)) {
+                                    repeatingNum = true;
+                                }
+                                else {
+                                    nonRepeatingNumsList.add(lessonNum);
+                                }
+
                             } catch (Exception ex) {
-                                ex.printStackTrace();
+                                Log.d("TimetableFragmentThread", "num - skipped(" + i + ")");
                             }
                             try {
                                 lessonRoom = items.getJSONObject(i).getString("room");
                             } catch (Exception ex) {
-                                ex.printStackTrace();
+                                Log.d("TimetableFragmentThread", "room - skipped(" + i + ")");
                             }
                             try {
                                 teacher = items.getJSONObject(i).getString("teacher");
                             } catch (Exception ex) {
                                 ex.printStackTrace();
+                                Log.d("TimetableFragmentThread", "teacherMissing - skipped(" + i + ")");
                             }
                             try {
-                                group = items.getJSONObject(i).getString("grp");
+                                group = items.getJSONObject(i).getString("grp_short");
                             } catch (Exception ex) {
-                                ex.printStackTrace();
+                                Log.d("TimetableFragmentThread", "groupMissing - skipped(" + i + ")");
                             }
-                            lessons.add(new TimetableLesson(lessonName, lessonNum, lessonRoom, teacher, group));
+                            lessons.add(new TimetableLesson(lessonName, lessonNum, lessonRoom, teacher, group, repeatingNum));
                         }
                         timetableDays.add(new TimetableDays(title, curTitle, lessons));
+                        Log.d("TimetableFragmentThread", "added TimetableDay elements: " + timetableDays.size());
+
                     }
                     catch(Exception ex){
                         ex.printStackTrace();
+
                     }
 
                 }
+                Log.d("TimetableFragmentThread", "notifying that the timetableDays is : " + timetableDays.size());
+                Objects.requireNonNull(getActivity()).runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        recyclerView.getRecycledViewPool().clear();
+                        adapterTimetable.notifyDataSetChanged();
+                    }
+                });
                 if(responseSchedule == null) throw new ConnectException();
+
                 responseSchedule.close();
                 response.close();
             }
@@ -203,5 +243,12 @@ public class TimetableFragment extends Fragment {
 
         }
 
+    }
+
+    @Override
+    public void onPause() {
+        if(getTimetableAsyncTask != null)
+        getTimetableAsyncTask.cancel(true);
+        super.onPause();
     }
 }

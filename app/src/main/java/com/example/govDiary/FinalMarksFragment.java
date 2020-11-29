@@ -62,6 +62,7 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
     AdapterFinalMarks adapterFinalMarks;
     SwipeRefreshLayout swipeRefreshLayout;
     ArrayList<Period> periodList;
+    public int lastSelectedPeriod = -1;
     String lastStartDate = "", lastEndDate = "";
     boolean firstLoadingFinished = false;
     String TAG = "FinalMarksFragment";
@@ -70,6 +71,8 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
     RecyclerView.LayoutManager RecyclerViewLayoutManager;
     AdapterPeriods adapterP;
     LinearLayoutManager HorizontalLayout;
+    private AsyncTask<String, Integer, Void> getMarksAsyncTasks;
+    private getPeriods getPeriodsAsyncTask;
     //TODO: при рефреше - если periodNamesList пустой, то получаем его заново, иначе просто получаем заново оценки
 
     @Nullable
@@ -105,12 +108,12 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
             @Override
             public void onRefresh() {
                 if(firstLoadingFinished && !lastStartDate.equals("") && !lastEndDate.equals("")){
-                    new getMarks(lastStartDate, lastEndDate).execute();
+                    getMarksAsyncTasks = new getMarks(lastStartDate, lastEndDate).execute();
                 }
             }
         });
-        getPeriods gP = new getPeriods();
-        gP.execute();
+        getPeriodsAsyncTask = new getPeriods();
+        getPeriodsAsyncTask.execute();
         return timetableFragmentView;
     }
 
@@ -129,17 +132,19 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
             ((MaterialCardView) (recyclerViewPeriods.findViewHolderForAdapterPosition(position).itemView.findViewById(R.id.cardview))).setStrokeColor(getResources().getColor(R.color.periodButtonStrokeColorActive));
             ((TextView) (recyclerViewPeriods.findViewHolderForAdapterPosition(position).itemView.findViewById(R.id.textview))).setTextColor(getResources().getColor(R.color.periodButtonTextColorActive));
             markedLessons.clear();
+            lastSelectedPeriod = position;
             new getMarks(periodList.get(position).startDate, periodList.get(position).endDate).execute();
             adapterFinalMarks.notifyDataSetChanged();
             //getMarks gM = new getMarks(periodNames.inverse().get(periodNamesList.get(position)));
             //gM.execute();
+
         }
         catch(NullPointerException e){
             Log.e(TAG, "onClick: nullpointer");
         }
     }
 
-    private class getPeriods extends AsyncTask<String, Integer, Void> {
+    private class getPeriods extends AsyncTask<String, Integer, Void> { //TODO: IF NOT FOUND- CHOOSE THE CLOSEST DATE!!!!!!!!!! now fuck
         @Override
         protected Void doInBackground(String... strings) {
             try {
@@ -197,13 +202,22 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
             });
             if(!firstLoadingFinished){
                 try {
+                    String firstDateAfterFoundStart = null;
+                    String firstDateAfterFoundEnd = null;
+                    int lastCounterFound = 0;
                 for (int i = 0; i < periodList.size(); i++) {
 
                         Date startingDate = new SimpleDateFormat("yyyyMMdd").parse(periodList.get(i).startDate);
                         Date endingDate = new SimpleDateFormat("yyyyMMdd").parse(periodList.get(i).endDate);
                         Date curDate = Calendar.getInstance().getTime();
+                    if(firstDateAfterFoundStart == null && curDate.after(startingDate)){
+                        firstDateAfterFoundStart = periodList.get(i).startDate;
+                        firstDateAfterFoundEnd = periodList.get(i).endDate;
+                        lastCounterFound = i;
+                    }
                         if(curDate.after(startingDate) && curDate.before(endingDate)){
-                            new getMarks(periodList.get(i).startDate, periodList.get(i).endDate).execute();
+                           firstDateAfterFoundStart = null;
+                            getMarksAsyncTasks = new getMarks(periodList.get(i).startDate, periodList.get(i).endDate).execute();
                             Log.d(TAG, "position period: " + i);
                             final int counter = i;
                             final Handler handler = new Handler(Looper.getMainLooper());
@@ -219,10 +233,26 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
                         }
 
                 }
+
+                    if(firstDateAfterFoundStart != null){
+                        getMarksAsyncTasks = new getMarks(firstDateAfterFoundStart, firstDateAfterFoundEnd).execute();
+                        final int lastCounter = lastCounterFound;
+                        final Handler handler = new Handler(Looper.getMainLooper());
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                ((MaterialCardView) (recyclerViewPeriods.findViewHolderForAdapterPosition(lastCounter).itemView.findViewById(R.id.cardview))).setCardBackgroundColor(getResources().getColor(R.color.periodButtonColorActive));
+                                ((MaterialCardView) (recyclerViewPeriods.findViewHolderForAdapterPosition(lastCounter).itemView.findViewById(R.id.cardview))).setStrokeColor(getResources().getColor(R.color.periodButtonStrokeColorActive));
+                                ((TextView) (recyclerViewPeriods.findViewHolderForAdapterPosition(lastCounter).itemView.findViewById(R.id.textview))).setTextColor(getResources().getColor(R.color.periodButtonTextColorActive));
+                            }
+                        }, 50);
+
+                    }
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
             }
+
             firstLoadingFinished = true;
             super.onPostExecute(aVoid);
         }
@@ -262,8 +292,31 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
             markedLessons.clear();
             Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/getmarks?student=" + studentID + "&days=" + startDate + "-" + endDate + "&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
             try{
-
-
+                //Getting all finalmarks - bad implementation because of the diary's api - they separated the marks and finalmarks :|
+                HashMap<String, String> finalMarks = new HashMap<>();
+                Response responseFinalMarksAssessments = Api.sendRequest("https://edu.gounn.ru/apiv3/getfinalassessments?devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
+                String responseFinalMarksAssessmentsString = responseFinalMarksAssessments.body().string();
+                try {
+                    JSONArray finalMarksAssessments = (new JSONObject(responseFinalMarksAssessmentsString)).getJSONObject("response").getJSONObject("result")
+                            .getJSONObject("students").getJSONObject(studentID).getJSONArray("items");
+                    for (int i = 0; i < finalMarksAssessments.length(); i++) {
+                        String subjName = finalMarksAssessments.getJSONObject(i).getString("name");
+                        JSONArray assessments = finalMarksAssessments.getJSONObject(i).getJSONArray("assessments");
+                        for (int j = 0; j < assessments.length(); j++) {
+                            String value = assessments.getJSONObject(j).getString("value");
+                            int periodNum = j;
+                            if (j > (periodList.size() - 1))
+                                periodNum = periodList.size() - 1;
+                            if (value != null && periodNum == lastSelectedPeriod) { //Checking if the mark is from current period
+                                finalMarks.put(subjName, value);
+                            }
+                        }
+                    }
+                }
+                catch(Exception ex){
+                    Log.d(TAG, "doInBackground: final marks are empty or err happened when getting it.");
+                }
+                //Getting the marks
                 if(response == null) throw new ConnectException();
                 JSONArray marks = null;
                 try {
@@ -294,7 +347,9 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
                         tMarklist.add(new Mark(markStr, weight, date, mType, comment, lessonComment));
                     }
                     //adding info to list
+                    if(!finalMarks.containsKey(name))
                     markedLessons.add(new MarkedLesson(name, average, tMarklist));
+                    else markedLessons.add(new MarkedLesson(name, finalMarks.get(name), average, tMarklist));
                 }
 
                 Log.d(TAG, "markedLessonsGettingFinished(size): " + markedLessons.size());
@@ -307,6 +362,8 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
 
                 lastStartDate = startDate;
                 lastEndDate = endDate;
+
+
             }
             catch(IllegalArgumentException e){
                 e.printStackTrace();
@@ -322,8 +379,12 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
 
     }
 
-
-
-
-
+    @Override
+    public void onPause() {
+        if(getMarksAsyncTasks != null)
+        getMarksAsyncTasks.cancel(true);
+        if(getPeriodsAsyncTask != null)
+        getPeriodsAsyncTask.cancel(true);
+        super.onPause();
+    }
 }

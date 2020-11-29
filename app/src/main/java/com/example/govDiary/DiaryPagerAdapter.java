@@ -10,10 +10,14 @@ import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.lifecycle.Lifecycle;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
+import org.json.JSONObject;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedHashMap;
 
 import static androidx.constraintlayout.widget.Constraints.TAG;
 
@@ -23,6 +27,7 @@ public class DiaryPagerAdapter extends FragmentStateAdapter {
     String authToken, studentID;
     Calendar initDate;
     int amount = 0;
+
 
     public DiaryPagerAdapter(@NonNull FragmentManager fragmentManager, @NonNull Lifecycle lifecycle) {
         super(fragmentManager, lifecycle);
@@ -51,7 +56,11 @@ public class DiaryPagerAdapter extends FragmentStateAdapter {
         Log.d(TAG, "getting diary Fragment on " + position + ",prev date is " + initDate.getTime().toString());
         String d = dateCalc(initDate, position);
         Log.d(TAG, "getting diary Fragment on " + position + ",date is " + d);
-        return DiaryListFragment.newDiaryFragmentInstance(authToken, studentID, d + "-" + d);
+        ArrayList<String> dates = new ArrayList<>();
+        for (int i = position - 7; i < position + 7; i++) {
+            dates.add(dateCalc(initDate, i));
+        }
+        return DiaryListFragment.newDiaryFragmentInstance(authToken, studentID, d, dateCalc(initDate, position - 7), dateCalc(initDate, position + 7), dates);
     }
 
     private String dateCalc(Calendar cal, int pos){

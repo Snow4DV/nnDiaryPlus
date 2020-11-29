@@ -4,13 +4,17 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.provider.CalendarContract;
 import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.Space;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,7 +23,9 @@ import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import static android.content.ContentValues.TAG;
@@ -44,8 +50,9 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        holder.linearLayout.removeAllViews();
         //on click listener to every carcview
-        holder.cardView.setOnClickListener(new View.OnClickListener() {
+        holder.textName.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(!(lessons.get(position).homework.equals("") || lessons.get(position).homework.equals("null") || lessons.get(position).homework == null)) {
@@ -69,6 +76,9 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
             holder.space.getLayoutParams().height = 0;
             holder.textMark.setVisibility(View.VISIBLE);
 
+        }
+        else{
+            holder.textMark.setVisibility(View.GONE);
         }
         //есть ли тема
         if(!(lessons.get(position).topic == null || lessons.get(position).topic == "null")){
@@ -108,6 +118,25 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
                 cont.startActivity(intent);
             }
         });
+        if(lessons.get(position).files != null){
+            List<String> keys = new ArrayList<>(lessons.get(position).files.keySet());
+            List<String> values = new ArrayList<>(lessons.get(position).files.values());
+            for (int i = 0; i < keys.size(); i++) {
+                View fileView = layoutInflater.inflate(R.layout.file_item_with_padding, null);
+                TextView fileName = fileView.findViewById(R.id.fileName);
+                fileName.setText(keys.get(i));
+                final int ind = i;
+                fileName.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent i = new Intent(Intent.ACTION_VIEW);
+                        i.setData(Uri.parse(values.get(ind)));
+                        cont.startActivity(i);
+                    }
+                });
+                holder.linearLayout.addView(fileView);
+            }
+        }
     }
 
     @Override
@@ -122,6 +151,7 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
         Space space;
         ImageButton options;
         CardView cardView;
+        LinearLayout linearLayout;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -132,6 +162,7 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
             textTopic = itemView.findViewById(R.id.lessonTopic);
             options = itemView.findViewById(R.id.optionsButton);
             cardView = itemView.findViewById(R.id.cardViewDiary);
+            linearLayout = itemView.findViewById(R.id.linearFiles);
         }
 
 

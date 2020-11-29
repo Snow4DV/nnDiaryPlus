@@ -2,28 +2,30 @@ package com.example.govDiary;
 
 import android.content.Context;
 import android.text.Html;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.common.collect.TreeMultimap;
-
-import java.util.Objects;
-import java.util.TreeMap;
+import java.util.ArrayList;
 
 public class AdapterTimetable extends RecyclerView.Adapter<AdapterTimetable.ViewHolder> {
+    private static final String TAG =  "AdapterTimetable";
     private LayoutInflater layoutInflater;
     private Context cont;
-    private TreeMap<Integer, TreeMultimap<Integer,String>> lessonsAdapterMap = new TreeMap<>();  // <Номер недели, <Номер урока\текст для вывода>
-    AdapterTimetable(Context context,TreeMap<Integer, TreeMultimap<Integer,String>> lessonsAdapterMap){
-        this.lessonsAdapterMap = lessonsAdapterMap;
+    private ArrayList<TimetableDays> timetableDays;
+    AdapterTimetable(Context context, ArrayList<TimetableDays> timetableDays){
+        this.timetableDays = timetableDays;
         this.layoutInflater = LayoutInflater.from(context);
         cont = context;
+        Log.d(TAG, "AdapterTimetableConstructor: timetableDaysSize is " + timetableDays.size());
     }
+
 
     @NonNull
     @Override
@@ -34,56 +36,48 @@ public class AdapterTimetable extends RecyclerView.Adapter<AdapterTimetable.View
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        //holder.textName.setText(lessons.get(position).name);
-        String text = "";
-        int weekday = position + 1;
-        String weekdayString;
-        switch(weekday){
-            case 1:
-                weekdayString = "Понедельник";
-                break;
-            case 2:
-                weekdayString = "Вторник";
-                break;
-            case 3:
-                weekdayString = "Среда";
-                break;
-            case 4:
-                weekdayString = "Четверг";
-                break;
-            case 5:
-                weekdayString = "Пятница";
-                break;
-            case 6:
-                weekdayString = "Суббота";
-                break;
-            default:
-                weekdayString = "Ошибка";
-                break;
-        }
-        holder.weekdayName.setText(weekdayString);
-        TreeMultimap<Integer, String> tempMap = lessonsAdapterMap.get(position + 1);
-        for (int i = 0; i < tempMap.size(); i++) {
-            for (String s:
-                    tempMap.get(i)) {
-                text += s;
+        holder.weekdayName.setText(timetableDays.get(position).name);
+        ArrayList<TimetableLesson> curDay = timetableDays.get(position).lessons;
+        holder.lessonsLayout.removeAllViews();
+        for(int i = 0; i < curDay.size(); i++){
+            View lessonView = layoutInflater.inflate(R.layout.timetable_item_list, null);
+            TextView lessonString = lessonView.findViewById(R.id.lessonString);
+            TextView lessonNum = lessonView.findViewById(R.id.lessonNum);
+            TextView teacherText = lessonView.findViewById(R.id.teacherNameAndRoom);
+            String lessonNameData = curDay.get(i).lessonName;
+            String lessonGroupData = curDay.get(i).group;
+            String roomNumData = curDay.get(i).room;
+            String teacherNameData = curDay.get(i).teacher;
+            if(!teacherNameData.equals("null")) teacherText.setText(teacherNameData);
+            else teacherText.setVisibility(View.INVISIBLE);
+            if(!lessonNum.equals(""))
+                lessonNum.setText(curDay.get(i).lessonNumber);
+            if(curDay.get(i).repeatedNum) lessonNum.setAlpha(0.0f);
+            if(!lessonGroupData.equals("")){
+                lessonString.setText(Html.fromHtml("<b>" + lessonNameData + "</b> (" + lessonGroupData + ") "));
             }
+            else{
+                lessonString.setText(Html.fromHtml("<b>" + lessonNameData + "</b> "));
+            }
+            holder.lessonsLayout.addView(lessonView);
+
         }
-        text = text.substring(0, text.length() - 1);
-        holder.weekdayText.setText(Html.fromHtml(text));
+
+
     }
 
     @Override
     public int getItemCount() {
-        return Objects.requireNonNull(lessonsAdapterMap.size());
+        return timetableDays.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder{
-        TextView weekdayName, weekdayText;
+        TextView weekdayName;
+        LinearLayout lessonsLayout;
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             weekdayName = itemView.findViewById(R.id.weekdayName);
-            weekdayText = itemView.findViewById(R.id.weekdayText);
+            lessonsLayout = itemView.findViewById(R.id.lessonsLayout);
         }
     }
 }
