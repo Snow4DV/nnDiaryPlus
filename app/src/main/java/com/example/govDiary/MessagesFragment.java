@@ -115,73 +115,69 @@ public class MessagesFragment extends Fragment {
 
     private class getMessages extends AsyncTask<String, Integer, Void> {
         String authT;
+        String folderName = "inbox";
+        String servAnsw;
+        Response sentMessagesResponse;
         getMessages(String auth){
             authT = auth;
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    swipeRefreshLayout.setRefreshing(false);
+            try {
+                messages.clear();
+                if (sentMessagesResponse == null) throw new NoConnectionPendingException();
+
+                JSONArray messagesJSON = (new JSONObject(servAnsw)).getJSONObject("response").getJSONObject("result")
+                        .getJSONArray("messages");
+                for (int i = 0; i < messagesJSON.length(); i++) {
+                    String msgDate = messagesJSON.getJSONObject(i).getString("date");
+                    String shortText = messagesJSON.getJSONObject(i).getString("short_text");
+                    String subject = messagesJSON.getJSONObject(i).getString("subject");
+                    String id = messagesJSON.getJSONObject(i).getString("id");
+                    boolean unread = messagesJSON.getJSONObject(i).getBoolean("unread");
+                    boolean withFiles = messagesJSON.getJSONObject(i).getBoolean("with_files");
+                    LinkedHashMap<String, String> users = new LinkedHashMap<>(); //<ID, Name string>
+                    if(usersObject.equals("users_to")){
+                        JSONArray usersToJson = messagesJSON.getJSONObject(i).getJSONArray(usersObject);
+                        for (int j = 0; j < usersToJson.length(); j++) {
+                            users.put(usersToJson.getJSONObject(j).getString("name"), usersToJson.getJSONObject(j).getString("lastname") + " " + usersToJson.getJSONObject(j).getString("firstname").substring(0, 1) + ". " + usersToJson.getJSONObject(j).getString("middlename").substring(0, 1) + ".");
+                        }
+                    }
+                    else{
+                        users.put(messagesJSON.getJSONObject(i).getJSONObject(usersObject).getString("name"), messagesJSON.getJSONObject(i).getJSONObject(usersObject).getString("lastname") + " " + messagesJSON.getJSONObject(i).getJSONObject(usersObject).getString("firstname").substring(0, 1) + ". " + messagesJSON.getJSONObject(i).getJSONObject(usersObject).getString("middlename").substring(0, 1) + ".");
+                    }
+                    messages.add(new Message(msgDate, shortText, subject, id, users, usersObject.equals("users_to"), withFiles, unread));
                 }
-            });
+                if(getActivity() == null) {
+                    this.cancel(true);
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                try {
+                    Thread.sleep(5000);
+                    Toast.makeText(getContext(), "Произошла ошибка при загрузке данных. Повторите позже.", Toast.LENGTH_SHORT).show();
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            messagesListAdapter.notifyDataSetChanged();
+            swipeRefreshLayout.setRefreshing(false);
             super.onPostExecute(aVoid);
         }
 
         @Override
         protected Void doInBackground(String... strings) {
-            String folderName = "inbox";
             if(usersObject.equals("users_to")) folderName = "sent";
-                try {
-                    messages.clear();
-                    Response sentMessagesResponse = Api.sendRequest("https://edu.gounn.ru/apiv3/getmessages?folder=" + folderName + "&unreadonly=no&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authT + "&vendor=edu", null, getContext(), false);
-                    if (sentMessagesResponse == null) throw new NoConnectionPendingException();
-                    String servAnsw = sentMessagesResponse.body().string();
-                    JSONArray messagesJSON = (new JSONObject(servAnsw)).getJSONObject("response").getJSONObject("result")
-                        .getJSONArray("messages");
-                    for (int i = 0; i < messagesJSON.length(); i++) {
-                        String msgDate = messagesJSON.getJSONObject(i).getString("date");
-                        String shortText = messagesJSON.getJSONObject(i).getString("short_text");
-                        String subject = messagesJSON.getJSONObject(i).getString("subject");
-                        String id = messagesJSON.getJSONObject(i).getString("id");
-                        boolean unread = messagesJSON.getJSONObject(i).getBoolean("unread");
-                        boolean withFiles = messagesJSON.getJSONObject(i).getBoolean("with_files");
-                        LinkedHashMap<String, String> users = new LinkedHashMap<>(); //<ID, Name string>
-                        if(usersObject.equals("users_to")){
-                            JSONArray usersToJson = messagesJSON.getJSONObject(i).getJSONArray(usersObject);
-                            for (int j = 0; j < usersToJson.length(); j++) {
-                                users.put(usersToJson.getJSONObject(j).getString("name"), usersToJson.getJSONObject(j).getString("lastname") + " " + usersToJson.getJSONObject(j).getString("firstname").substring(0, 1) + ". " + usersToJson.getJSONObject(j).getString("middlename").substring(0, 1) + ".");
-                            }
-                        }
-                        else{
-                            users.put(messagesJSON.getJSONObject(i).getJSONObject(usersObject).getString("name"), messagesJSON.getJSONObject(i).getJSONObject(usersObject).getString("lastname") + " " + messagesJSON.getJSONObject(i).getJSONObject(usersObject).getString("firstname").substring(0, 1) + ". " + messagesJSON.getJSONObject(i).getJSONObject(usersObject).getString("middlename").substring(0, 1) + ".");
-                        }
-                        messages.add(new Message(msgDate, shortText, subject, id, users, usersObject.equals("users_to"), withFiles, unread));
-                    }
-                    if(getActivity() == null) {
-                        this.cancel(true);
-                    }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    try {
-                        Thread.sleep(5000);
-                        Toast.makeText(getContext(), "Произошла ошибка при загрузке данных. Повторите позже.", Toast.LENGTH_SHORT).show();
-
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        messagesListAdapter.notifyDataSetChanged();
-                    }
-                });
-
-
+            sentMessagesResponse = Api.sendRequest("https://edu.gounn.ru/apiv3/getmessages?folder=" + folderName + "&unreadonly=no&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authT + "&vendor=edu", null, getContext(), false);
+            try {
+                servAnsw = sentMessagesResponse.body().string();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             return null;
 
         }

@@ -96,9 +96,6 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 int index;
                 switch(item.getItemId()){
-                    case R.id.homemenu:
-                        index = 1;
-                        break;
                     case R.id.diarymenu:
                         index = 1;
                         break;

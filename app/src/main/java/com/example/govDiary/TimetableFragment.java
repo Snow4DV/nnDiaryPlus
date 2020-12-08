@@ -48,6 +48,9 @@ public class TimetableFragment extends Fragment {
     private static final String TAG = "TimetableFragment";
     RecyclerView recyclerView;
     AdapterTimetable adapterTimetable;
+    Response responseSchedule;
+    Calendar curDateStart, curDateEnd;
+    String curTitle;
     SwipeRefreshLayout swipeRefreshLayout;
     ACProgressFlower loading;
     ArrayList<TimetableDays> timetableDays;
@@ -103,62 +106,13 @@ public class TimetableFragment extends Fragment {
     }
 
     private class getTimetable extends AsyncTask<String, Integer, Void> {
+        String responseScheduleStr;
         @Override
         protected void onPostExecute(Void aVoid) {
-            swipeRefreshLayout.setRefreshing(false);
-            super.onPostExecute(aVoid);
-        }
-
-        @Override
-        protected Void doInBackground(String... strings) {
             try {
-                Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/getperiods?weeks=true&show_disabled=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
-                String rString = response.body().string();
-                //at first getting index of current period
-                JSONArray periods = (new JSONObject(rString)).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(0).getJSONArray("periods");
-                int periodNum = 0;
-                for (int i = 0; i < periods.length(); i++) {
-                    String start = periods.getJSONObject(i).getString("start");
-                    String end = periods.getJSONObject(i).getString("end");
-                    Date startDate = new SimpleDateFormat("yyyyMMdd").parse(start);
-                    Date endDate = new SimpleDateFormat("yyyyMMdd").parse(end);
-                    if(Calendar.getInstance().getTime().after(startDate) && Calendar.getInstance().getTime().before(endDate)){  //TODO: IF NOT FOUND- CHOOSE THE CLOSEST DATE!!!!!!!!!!
-                        periodNum = i;
-                        break;
-                    }
-                }
-                //getting current week
-                Log.d("TimetableFragment", "doInBackground: " + (new JSONObject(rString)).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(periodNum).toString());
-                JSONArray weeks = (new JSONObject(rString)).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(0).getJSONArray("periods").getJSONObject(periodNum).getJSONArray("weeks");
-                String currentWeekStart = "";
-                String currentWeekEnd = "";
-                Calendar curDateStart = Calendar.getInstance();
-                String curTitle = "";
-                Calendar curDateEnd = Calendar.getInstance();
-                curDateStart.set(Calendar.HOUR_OF_DAY, 0);
-                curDateEnd.set(Calendar.HOUR_OF_DAY, 0);
-                if (response == null) throw new NoConnectionPendingException();
-                for (int i = 0; i < weeks.length(); i++) {
-                    String start = weeks.getJSONObject(i).getString("start");
-                    String end = weeks.getJSONObject(i).getString("end");
-                    String title = weeks.getJSONObject(i).getString("title");
-                    Date startDate = new SimpleDateFormat("yyyyMMdd").parse(start);
-                    Date endDate = new SimpleDateFormat("yyyyMMdd").parse(end);
-                    Date curDate = Calendar.getInstance().getTime();
-                    if(curDate.before(endDate)){
-                        currentWeekEnd = end;
-                        curTitle = title;
-                        currentWeekStart = start;
-                        Log.d("TimetableFragment", "doInBackground: chosen current date is " + currentWeekStart + "/" + currentWeekEnd);
-                        curDateStart.setTime(startDate);
-                        curDateEnd.setTime(endDate);
-                        break;
-                    }
-                }
-                Response responseSchedule = Api.sendRequest("https://edu.gounn.ru/apiv3/getschedule?student=" + studentID  + "&days=" + currentWeekStart + "-" + currentWeekEnd + "&class=" + form + "&rings=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
-                String responseScheduleStr = responseSchedule.body().string();
+
                 timetableDays.clear();
-                for(; curDateStart.compareTo(curDateEnd)<=0; curDateStart.add(Calendar.DATE, 1)) {
+                for (; curDateStart.compareTo(curDateEnd) <= 0; curDateStart.add(Calendar.DATE, 1)) {
                     try {
                         String curDate = (new SimpleDateFormat("yyyyMMdd")).format(curDateStart.getTime());
                         Log.d("Timetable fragment", "this week day:" + curDate);
@@ -182,10 +136,9 @@ public class TimetableFragment extends Fragment {
                             }
                             try {
                                 lessonNum = items.getJSONObject(i).getString("num");
-                                if(nonRepeatingNumsList.contains(lessonNum)) {
+                                if (nonRepeatingNumsList.contains(lessonNum)) {
                                     repeatingNum = true;
-                                }
-                                else {
+                                } else {
                                     nonRepeatingNumsList.add(lessonNum);
                                 }
 
@@ -213,8 +166,7 @@ public class TimetableFragment extends Fragment {
                         timetableDays.add(new TimetableDays(title, curTitle, lessons));
                         Log.d("TimetableFragmentThread", "added TimetableDay elements: " + timetableDays.size());
 
-                    }
-                    catch(Exception ex){
+                    } catch (Exception ex) {
                         ex.printStackTrace();
 
                     }
@@ -228,10 +180,67 @@ public class TimetableFragment extends Fragment {
                         adapterTimetable.notifyDataSetChanged();
                     }
                 });
-                if(responseSchedule == null) throw new ConnectException();
+                if (responseSchedule == null) throw new ConnectException();
 
                 responseSchedule.close();
+
+                swipeRefreshLayout.setRefreshing(false);
+            }
+            catch(Exception ex){
+                ex.printStackTrace();
+            }
+            super.onPostExecute(aVoid);
+        }
+
+        @Override
+        protected Void doInBackground(String... strings) {
+            try {
+                Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/getperiods?weeks=true&show_disabled=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
+                String rString = response.body().string();
                 response.close();
+                //at first getting index of current period
+                JSONArray periods = (new JSONObject(rString)).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(0).getJSONArray("periods");
+                int periodNum = 0;
+                for (int i = 0; i < periods.length(); i++) {
+                    String start = periods.getJSONObject(i).getString("start");
+                    String end = periods.getJSONObject(i).getString("end");
+                    Date startDate = new SimpleDateFormat("yyyyMMdd").parse(start);
+                    Date endDate = new SimpleDateFormat("yyyyMMdd").parse(end);
+                    if(Calendar.getInstance().getTime().after(startDate) && Calendar.getInstance().getTime().before(endDate)){  //TODO: IF NOT FOUND- CHOOSE THE CLOSEST DATE!!!!!!!!!!
+                        periodNum = i;
+                        break;
+                    }
+                }
+                //getting current week
+                Log.d("TimetableFragment", "doInBackground: " + (new JSONObject(rString)).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(periodNum).toString());
+                JSONArray weeks = (new JSONObject(rString)).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(0).getJSONArray("periods").getJSONObject(periodNum).getJSONArray("weeks");
+                String currentWeekStart = "";
+                String currentWeekEnd = "";
+                curDateStart = Calendar.getInstance();
+                curTitle = "";
+                curDateEnd = Calendar.getInstance();
+                curDateStart.set(Calendar.HOUR_OF_DAY, 0);
+                curDateEnd.set(Calendar.HOUR_OF_DAY, 0);
+                if (response == null) throw new NoConnectionPendingException();
+                for (int i = 0; i < weeks.length(); i++) {
+                    String start = weeks.getJSONObject(i).getString("start");
+                    String end = weeks.getJSONObject(i).getString("end");
+                    String title = weeks.getJSONObject(i).getString("title");
+                    Date startDate = new SimpleDateFormat("yyyyMMdd").parse(start);
+                    Date endDate = new SimpleDateFormat("yyyyMMdd").parse(end);
+                    Date curDate = Calendar.getInstance().getTime();
+                    if(curDate.before(endDate)){
+                        currentWeekEnd = end;
+                        curTitle = title;
+                        currentWeekStart = start;
+                        Log.d("TimetableFragment", "doInBackground: chosen current date is " + currentWeekStart + "/" + currentWeekEnd);
+                        curDateStart.setTime(startDate);
+                        curDateEnd.setTime(endDate);
+                        break;
+                    }
+                }
+                responseSchedule = Api.sendRequest("https://edu.gounn.ru/apiv3/getschedule?student=" + studentID  + "&days=" + currentWeekStart + "-" + currentWeekEnd + "&class=" + form + "&rings=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
+                responseScheduleStr = responseSchedule.body().string();
             }
             catch(Exception ex){
                 ex.printStackTrace();

@@ -74,9 +74,8 @@ public class MessagesListAdapter extends ArrayAdapter<Message> {
                 getContext().startActivity(intent);
             }
         });
-        usersString.substring(0, usersString.length() - 3);
         date.setText(curMessage.msgDate);
-        senderText.setText(usersString);
+        senderText.setText(usersString.substring(0, usersString.length() - 2));
         shortText.setText(Html.fromHtml(curMessage.shortText));
         subject.setText(curMessage.subject);
         if(curMessage.withFiles) attachedFileIconView.setVisibility(View.VISIBLE);

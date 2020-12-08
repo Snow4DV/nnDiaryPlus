@@ -144,20 +144,27 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
         }
     }
 
-    private class getPeriods extends AsyncTask<String, Integer, Void> { //TODO: IF NOT FOUND- CHOOSE THE CLOSEST DATE!!!!!!!!!! now fuck
+    private class getPeriods extends AsyncTask<String, Integer, Void> {  //TODO: YEAR FINAL ASSESSMENTS FIX!!!!!!!!!
+        Response response;
+        String responseString;
         @Override
         protected Void doInBackground(String... strings) {
+            response = Api.sendRequest("https://edu.gounn.ru/apiv3/getperiods?weeks=false&show_disabled=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
             try {
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        swipeRefreshLayout.setRefreshing(true);
-                    }
-                });
+                responseString = response.body().string();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
 
-                Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/getperiods?weeks=false&show_disabled=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            try {
+                swipeRefreshLayout.setRefreshing(true);
                 if (response == null) throw new NoConnectionPendingException();
-                JSONArray periods = (new JSONObject(response.body().string())).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(0).getJSONArray("periods");
+                JSONArray periods = (new JSONObject(responseString)).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(0).getJSONArray("periods");
                 String yearStart = "", yearEnd = "";
                 for (int i = 0; i < periods.length(); i++) {
                     String name = periods.getJSONObject(i).getString("fullname");
@@ -186,18 +193,6 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
                 @Override
                 public void run() {
                     adapterP.notifyDataSetChanged();
-                }
-            });
-            return null;
-
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    swipeRefreshLayout.setRefreshing(false);
                 }
             });
             if(!firstLoadingFinished){
@@ -261,6 +256,10 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
 
     private class getMarks extends AsyncTask<String, Integer, Void> {
         String startDate, endDate;
+        Response response;
+        String responseString;
+        Response responseFinalMarksAssessments;
+        String responseFinalMarksAssessmentsString;
 
         public getMarks(String startDate, String endDate) {
             this.startDate = startDate;
@@ -271,31 +270,12 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    swipeRefreshLayout.setRefreshing(false);
-                }
-            });
-
-            super.onPostExecute(aVoid);
-        }
-
-        @Override
-        protected Void doInBackground(String... strings) {
-            Objects.requireNonNull(getActivity()).runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    swipeRefreshLayout.setRefreshing(true);
-                }
-            });
+            swipeRefreshLayout.setRefreshing(true);
             markedLessons.clear();
-            Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/getmarks?student=" + studentID + "&days=" + startDate + "-" + endDate + "&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
             try{
                 //Getting all finalmarks - bad implementation because of the diary's api - they separated the marks and finalmarks :|
                 HashMap<String, String> finalMarks = new HashMap<>();
-                Response responseFinalMarksAssessments = Api.sendRequest("https://edu.gounn.ru/apiv3/getfinalassessments?devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
-                String responseFinalMarksAssessmentsString = responseFinalMarksAssessments.body().string();
+
                 try {
                     JSONArray finalMarksAssessments = (new JSONObject(responseFinalMarksAssessmentsString)).getJSONObject("response").getJSONObject("result")
                             .getJSONObject("students").getJSONObject(studentID).getJSONArray("items");
@@ -320,7 +300,7 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
                 if(response == null) throw new ConnectException();
                 JSONArray marks = null;
                 try {
-                     marks = (new JSONObject(response.body().string())).getJSONObject("response").getJSONObject("result").getJSONObject("students").getJSONObject(studentID).getJSONArray("lessons");
+                    marks = (new JSONObject(responseString)).getJSONObject("response").getJSONObject("result").getJSONObject("students").getJSONObject(studentID).getJSONArray("lessons");
                 }
                 catch(Exception e){
                     throw new IllegalArgumentException();
@@ -348,18 +328,12 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
                     }
                     //adding info to list
                     if(!finalMarks.containsKey(name))
-                    markedLessons.add(new MarkedLesson(name, average, tMarklist));
+                        markedLessons.add(new MarkedLesson(name, average, tMarklist));
                     else markedLessons.add(new MarkedLesson(name, finalMarks.get(name), average, tMarklist));
                 }
 
                 Log.d(TAG, "markedLessonsGettingFinished(size): " + markedLessons.size());
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        adapterFinalMarks.notifyDataSetChanged();
-                    }
-                });
-
+                adapterFinalMarks.notifyDataSetChanged();
                 lastStartDate = startDate;
                 lastEndDate = endDate;
 
@@ -367,11 +341,34 @@ public class FinalMarksFragment extends Fragment implements AdapterPeriods.OnCli
             }
             catch(IllegalArgumentException e){
                 e.printStackTrace();
-                Snackbar.make(Objects.requireNonNull(getActivity()).findViewById(android.R.id.content),"Похоже, еще не выставлена ни одна оценка.",Snackbar.LENGTH_SHORT).show();
+                try {
+                    Snackbar.make(Objects.requireNonNull(getActivity()).findViewById(android.R.id.content), "Похоже, еще не выставлена ни одна оценка.", Snackbar.LENGTH_SHORT).show();
+                }
+                catch(NullPointerException ex){
+                    Log.d(TAG, "onPostExecute: tried to snackbar, but fragment is dead already");
+                }
             }
             catch(Exception e){
                 e.printStackTrace();
                 Snackbar.make(Objects.requireNonNull(getActivity()).findViewById(android.R.id.content),"Произошла ошибка при загрузке данных. Повторите позже.",Snackbar.LENGTH_SHORT).show();
+            }
+            swipeRefreshLayout.setRefreshing(false);
+            super.onPostExecute(aVoid);
+        }
+
+        @Override
+        protected Void doInBackground(String... strings) {
+            response = Api.sendRequest("https://edu.gounn.ru/apiv3/getmarks?student=" + studentID + "&days=" + startDate + "-" + endDate + "&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
+            try {
+                responseString = response.body().string();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            responseFinalMarksAssessments = Api.sendRequest("https://edu.gounn.ru/apiv3/getfinalassessments?devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
+            try {
+                responseFinalMarksAssessmentsString = responseFinalMarksAssessments.body().string();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
             return null;
 

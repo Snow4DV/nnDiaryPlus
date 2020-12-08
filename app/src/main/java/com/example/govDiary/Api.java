@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.security.cert.CertificateException;
 
 import javax.net.ssl.HostnameVerifier;
@@ -63,7 +65,7 @@ public class Api {
                 return true;
             }
         })
-                .build();
+                .build(); //PROXY FOR TESTING
         Request request;
         if(formBody == null){
             request = new Request.Builder()

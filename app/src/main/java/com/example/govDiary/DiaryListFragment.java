@@ -104,6 +104,7 @@ public class DiaryListFragment extends Fragment {
         String day, daysMin7, daysPlus7;
         Response response;
         ArrayList<String> daysL;
+        JSONObject js;
         boolean ifReloading = false;
         public getDairy(String d, String dMinus7, String dPlus7, ArrayList<String> daysList) {
             super();
@@ -120,16 +121,13 @@ public class DiaryListFragment extends Fragment {
             daysMin7 = dMinus7;
             daysPlus7 = dPlus7;
         }
+
         @Override
         protected Void doInBackground(String... strings) {
             try {
-                swipeRefreshLayout.setRefreshing(true);
-                items.clear();
-                JSONObject js;
-                if(((JournalActivity)getActivity()).daysJSON.containsKey(day) && !ifReloading){
-                    js = ((JournalActivity)getActivity()).daysJSON.get(day);
-                }
-                else {
+                if (((JournalActivity) getActivity()).daysJSON.containsKey(day) && !ifReloading) {
+                    js = ((JournalActivity) getActivity()).daysJSON.get(day);
+                } else {
                     response = Api.sendRequest("https://edu.gounn.ru/apiv3/getdiary?student=" + studentID + "&days=" + daysMin7 + "-" + daysPlus7 + "&rings=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getContext(), false);
 
                     if (response == null) throw new ConnectException();
@@ -148,6 +146,27 @@ public class DiaryListFragment extends Fragment {
                         throw new IllegalArgumentException();
                     js = jsStud.getJSONObject("students").getJSONObject(studentID).getJSONObject("days").getJSONObject(day).getJSONObject("items");
                 }
+                return null;
+            }
+            catch(Exception ex){
+                ex.printStackTrace();
+            }
+            return null;
+
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            try {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        swipeRefreshLayout.setRefreshing(true);
+                    }
+                });
+                items.clear();
+
                 for(Iterator<String> iter = js.keys();iter.hasNext();) {
                     String key = iter.next();
                     Log.d(TAG, "doInBackground: keys of js: " + key);
@@ -225,16 +244,6 @@ public class DiaryListFragment extends Fragment {
                 Log.d(TAG, "doInBackground: response=null");
 
             }
-            catch (ConnectException e){
-                e.printStackTrace();
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        //Snackbar.make(getActivity().findViewById(android.R.id.content),"Проблемы с интернет-соединением.",Snackbar.LENGTH_SHORT).show();
-                    }
-                });
-
-            }
             catch (Exception e) {
                 e.printStackTrace();
                 Log.e("TAG", "getDiary: " + "JSON/IO ex");
@@ -261,13 +270,6 @@ public class DiaryListFragment extends Fragment {
 
             editor.apply();
             loadingFinished = true;
-            return null;
-
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
             lastDays = day;
             swipeRefreshLayout.setRefreshing(false);
             adapter.notifyDataSetChanged();

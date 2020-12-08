@@ -48,8 +48,10 @@ public class AdapterFinalMarks extends RecyclerView.Adapter<AdapterFinalMarks.Vi
         //old code
         holder.textName.setText(markedLessons.get(position).name);
         if(!markedLessons.get(position).ifMarkIsFinal)
-            if(markedLessons.get(position).averageMark != 0)
-            holder.textFinalMark.setText(String.valueOf(String.format("%.02f", markedLessons.get(position).averageMark)));
+            if(markedLessons.get(position).averageMark != 0) {
+                holder.textFinalMark.setText(String.valueOf(String.format("%.02f", markedLessons.get(position).averageMark)));
+                holder.textFinalMark.setVisibility(View.VISIBLE);
+            }
             else holder.textFinalMark.setVisibility(View.INVISIBLE);
         else{
             holder.textFinalMark.setText(Html.fromHtml("<b>" + markedLessons.get(position).finalMark + "</b>"));

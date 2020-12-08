@@ -92,7 +92,7 @@ public class DairyFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         //TODO: if periods couldn't be got make swiperefreshlistener active
-        View dairyFragmentView =  inflater.inflate(R.layout.dairy, container, false);
+        View dairyFragmentView = inflater.inflate(R.layout.dairy, container, false);
         context = getContext();
         progressBar = dairyFragmentView.findViewById(R.id.progress_circular);
         viewPager = dairyFragmentView.findViewById(R.id.viewPager);
@@ -100,7 +100,7 @@ public class DairyFragment extends Fragment {
         editor = pref.edit();
         dateAndTime = Calendar.getInstance();
         onDateSetListener = (view, year, monthOfYear, dayOfMonth) -> {
-            if(periodsLoaded) {
+            if (periodsLoaded) {
                 dateAndTime.set(Calendar.YEAR, year);
                 dateAndTime.set(Calendar.MONTH, monthOfYear);
                 dateAndTime.set(Calendar.DAY_OF_MONTH, dayOfMonth);
@@ -109,14 +109,14 @@ public class DairyFragment extends Fragment {
                 datePickerTimeline.setActiveDate(dateAndTime);
                 Log.d(TAG, "onCreateView: onDateSetListener: setting active date to " + dateAndTime.getTime().toString());
                 Calendar newCal = Calendar.getInstance();
-                newCal.set(year,monthOfYear,dayOfMonth, 0, 0);
+                newCal.set(year, monthOfYear, dayOfMonth, 0, 0);
                 Calendar initCal = Calendar.getInstance();
                 initCal.setTime(initDate);
                 initCal.set(Calendar.HOUR, 0);
                 initCal.set(Calendar.MINUTE, 0);
                 initCal.set(Calendar.MILLISECOND, 0);
                 //Toast.makeText(getContext(), "selected: " + ((newCal.getTimeInMillis() - initCal.getTimeInMillis())/MILLIS_PER_DAY), Toast.LENGTH_SHORT).show();
-                viewPager.setCurrentItem((int) ((newCal.getTimeInMillis() - initCal.getTimeInMillis())/MILLIS_PER_DAY));
+                viewPager.setCurrentItem((int) ((newCal.getTimeInMillis() - initCal.getTimeInMillis()) / MILLIS_PER_DAY));
             }
         };
         TypedValue typedValue = new TypedValue();
@@ -140,34 +140,33 @@ public class DairyFragment extends Fragment {
     }
 
     public void goToDate() {
-    DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(), onDateSetListener,
+        DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(), onDateSetListener,
                 dateAndTime.get(Calendar.YEAR),
                 dateAndTime.get(Calendar.MONTH),
                 dateAndTime.get(Calendar.DAY_OF_MONTH));
-    try {
-        datePickerDialog.getDatePicker().setMinDate(initDate.getTime());
-        datePickerDialog.getDatePicker().setMaxDate(yearEndDate.getTime());
-        datePickerDialog.show();
-    }
-    catch (NullPointerException e) {
-        Toast.makeText(getContext(), "Подождите завершения загрузки", Toast.LENGTH_SHORT).show();
-    }
+        try {
+            datePickerDialog.getDatePicker().setMinDate(initDate.getTime());
+            datePickerDialog.getDatePicker().setMaxDate(yearEndDate.getTime());
+            datePickerDialog.show();
+        } catch (NullPointerException e) {
+            Toast.makeText(getContext(), "Подождите завершения загрузки", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
     public void onPause() {
-        if(dairyAsyncTask != null)
-        dairyAsyncTask.cancel(true);
+        if (dairyAsyncTask != null)
+            dairyAsyncTask.cancel(true);
         super.onPause();
     }
 
-    public void setDateToDatePicker(Calendar date){
+    public void setDateToDatePicker(Calendar date) {
         Log.d(TAG, "setDateToDatePicker: got " + date.getTime().toString());
         datePickerTimeline.setActiveDate(date);
     }
 
     private void initColors() {
-        if(getResources().getString(R.string.mode).equals("Night")){
+        if (getResources().getString(R.string.mode).equals("Night")) {
             datePickerTimeline.setMonthTextColor(getResources().getColor(R.color.primary));
             datePickerTimeline.setDayTextColor(getResources().getColor(R.color.white));
             datePickerTimeline.setDateTextColor(getResources().getColor(R.color.white));
@@ -175,131 +174,139 @@ public class DairyFragment extends Fragment {
     }
 
     private class getPeriods extends AsyncTask<String, Integer, Void> {
+        Response response;
+        String responseStr;
         String authT;
-        getPeriods(String auth){
+
+        getPeriods(String auth) {
             authT = auth;
         }
+
         @Override
         protected Void doInBackground(String... strings) {
-            Boolean gotData=false;
-            while(!gotData) {
+            try {
+
+                response = Api.sendRequest("https://edu.gounn.ru/apiv3/getperiods?weeks=false&show_disabled=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authT + "&vendor=edu", null, getContext(), false);
+                responseStr = response.body().string();
+
+            } catch (Exception e) {
+                e.printStackTrace();
                 try {
+                    Thread.sleep(5000);
+                    Toast.makeText(getContext(), "Произошла ошибка при загрузке данных. Повторите позже.", Toast.LENGTH_SHORT).show();
 
-                    Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/getperiods?weeks=false&show_disabled=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authT + "&vendor=edu", null, getContext(), false);
-                    if (response == null) throw new NoConnectionPendingException();
-                    JSONArray periods = (new JSONObject(response.body().string())).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(0).getJSONArray("periods");
-                    String yearStart = "", yearEnd = "";
-                    for (int i = 0; i < periods.length(); i++) {
-                        String startDate = periods.getJSONObject(i).getString("start");
-                        String endDate = periods.getJSONObject(i).getString("end");
-                        if (i == periods.length() - 1) {
-                            yearEnd = endDate;
-                        } else if (i == 0) {
-                            yearStart = startDate;
-                        }
-
-                    }
-                    yearStartDate = new SimpleDateFormat("yyyyMMdd").parse(yearStart);
-                    yearEndDate = new SimpleDateFormat("yyyyMMdd").parse(yearEnd);
-                    Log.d(TAG, "doInBackground: got last day: " + yearEndDate.toString() + "and first date " + yearStartDate.toString());
-                    int days = (int) TimeUnit.DAYS.convert(yearEndDate.getTime() - yearStartDate.getTime(), TimeUnit.MILLISECONDS);
-                    int currentDay = (int) TimeUnit.DAYS.convert(Calendar.getInstance().getTime().getTime() - yearStartDate.getTime(), TimeUnit.MILLISECONDS);
-                    periodsLoaded = true;
-                    if(getActivity() == null) {
-                        this.cancel(true);
-                        break;
-                    }
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            progressBar.setVisibility(View.INVISIBLE);
-                        }
-                    });
-
-                    diaryPagerAdapter = new DiaryPagerAdapter(((AppCompatActivity)context).getSupportFragmentManager(), getLifecycle());
-                    diaryPagerAdapter.setTokenAndId(authToken, studentID);
-                    Calendar initCal = Calendar.getInstance();
-                    initDate = yearStartDate;
-                    initCal.setTime(yearStartDate);
-                    diaryPagerAdapter.setInitDateAndDaysAmount(initCal, days + 1);
-
-                    ((AppCompatActivity)context).runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-
-                            datePickerTimeline.setDatesAmount(days + 1);
-                            viewPager.setAdapter(diaryPagerAdapter);
-                            viewPager.setCurrentItem(currentDay, false);
-                            viewPager.setOffscreenPageLimit(3);
-                           viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-                               @Override
-                               public void onPageSelected(int position) {
-                                   //There are no pointers in java idk why did it worked in other way so i did this. Sorry:
-                                   Calendar tCal = Calendar.getInstance();
-                                   tCal.setTime(initDate);
-                                   tCal.add(Calendar.DATE, position);
-                                   Log.d(TAG, "onPageSelected: " + "date on screen is " + tCal.getTime().toString() + ",init cal is " + yearStartDate.toString());
-                                   setDateToDatePicker(tCal);
-                                   super.onPageSelected(position);
-                               }
-                           });
-                            Calendar initCalc = Calendar.getInstance();
-                            initCalc.setTime(initDate);
-                            datePickerTimeline.setInitialDate(initCalc.get(Calendar.YEAR), initCalc.get(Calendar.MONTH), initCalc.get(Calendar.DAY_OF_MONTH));
-
-                            Log.d(TAG, "run: curDay:" + currentDay + ",days:" + days);
-                            datePickerTimeline.setOnDateSelectedListener(new OnDateSelectedListener() {
-                                @Override
-                                public void onDateSelected(int year, int month, int day, int dayOfWeek) {
-                                    if (periodsLoaded) {
-                                        Log.d("TAG", "onDateSelected: " + year + "/" + month + "/" + day + "/" + dayOfWeek);
-                                        if (!items.isEmpty())
-                                            items.clear(); //bugfix for inconsistency detected
-                                        Calendar newCal = Calendar.getInstance();
-                                        newCal.set(year, month, day, 0, 0);
-                                        Calendar initCal = Calendar.getInstance();
-                                        initCal.setTime(initDate);
-                                        initCal.set(Calendar.HOUR, 0);
-                                        initCal.set(Calendar.MINUTE, 0);
-                                        initCal.set(Calendar.MILLISECOND, 0);
-                                        //Toast.makeText(getContext(), "selected: " + ((newCal.getTimeInMillis() - initCal.getTimeInMillis())/MILLIS_PER_DAY), Toast.LENGTH_SHORT).show();
-                                        viewPager.setCurrentItem((int) ((newCal.getTimeInMillis() - initCal.getTimeInMillis()) / MILLIS_PER_DAY));
-                                    } else {
-                                        Toast.makeText(getContext(), "Подождите, пока завершится загрузка", Toast.LENGTH_SHORT).show();
-                                        Calendar cal = Calendar.getInstance();
-                                        setDateToDatePicker(cal);
-                                        //TODO: back to prev date
-                                    }
-                                }
-
-                                @Override
-                                public void onDisabledDateSelected(int year, int month, int day, int dayOfWeek, boolean isDisabled) {
-                                    Log.d(TAG, "onDisabledDateSelected: Disabled Date Selected, doing nothing");
-                                }
-                            });
-
-                        }
-                    });
-                     gotData = true;
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    try {
-                        Thread.sleep(5000);
-                        Toast.makeText(getContext(), "Произошла ошибка при загрузке данных. Повторите позже.", Toast.LENGTH_SHORT).show();
-
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
-
             }
+
             return null;
 
         }
 
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            try {
+                if (response == null) throw new NoConnectionPendingException();
+                JSONArray periods = (new JSONObject(responseStr)).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(0).getJSONArray("periods");
+                String yearStart = "", yearEnd = "";
+                for (int i = 0; i < periods.length(); i++) {
+                    String startDate = periods.getJSONObject(i).getString("start");
+                    String endDate = periods.getJSONObject(i).getString("end");
+                    if (i == periods.length() - 1) {
+                        yearEnd = endDate;
+                    } else if (i == 0) {
+                        yearStart = startDate;
+                    }
+
+                }
+                yearStartDate = new SimpleDateFormat("yyyyMMdd").parse(yearStart);
+                yearEndDate = new SimpleDateFormat("yyyyMMdd").parse(yearEnd);
+                Log.d(TAG, "doInBackground: got last day: " + yearEndDate.toString() + "and first date " + yearStartDate.toString());
+                int days = (int) TimeUnit.DAYS.convert(yearEndDate.getTime() - yearStartDate.getTime(), TimeUnit.MILLISECONDS);
+                int currentDay = (int) TimeUnit.DAYS.convert(Calendar.getInstance().getTime().getTime() - yearStartDate.getTime(), TimeUnit.MILLISECONDS);
+                periodsLoaded = true;
+                if (getActivity() == null) {
+                    this.cancel(true);
+                }
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        progressBar.setVisibility(View.INVISIBLE);
+                    }
+                });
+
+                diaryPagerAdapter = new DiaryPagerAdapter(((AppCompatActivity) context).getSupportFragmentManager(), getLifecycle());
+                diaryPagerAdapter.setTokenAndId(authToken, studentID);
+                Calendar initCal = Calendar.getInstance();
+                initDate = yearStartDate;
+                initCal.setTime(yearStartDate);
+                diaryPagerAdapter.setInitDateAndDaysAmount(initCal, days + 1);
+
+                ((AppCompatActivity) context).runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        datePickerTimeline.setDatesAmount(days + 1);
+                        viewPager.setAdapter(diaryPagerAdapter);
+                        viewPager.setCurrentItem(currentDay, false);
+                        viewPager.setOffscreenPageLimit(3);
+                        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+                            @Override
+                            public void onPageSelected(int position) {
+                                //There are no pointers in java idk why did it worked in other way so i did this. Sorry:
+                                Calendar tCal = Calendar.getInstance();
+                                tCal.setTime(initDate);
+                                tCal.add(Calendar.DATE, position);
+                                Log.d(TAG, "onPageSelected: " + "date on screen is " + tCal.getTime().toString() + ",init cal is " + yearStartDate.toString());
+                                setDateToDatePicker(tCal);
+                                super.onPageSelected(position);
+                            }
+                        });
+                        Calendar initCalc = Calendar.getInstance();
+                        initCalc.setTime(initDate);
+                        datePickerTimeline.setInitialDate(initCalc.get(Calendar.YEAR), initCalc.get(Calendar.MONTH), initCalc.get(Calendar.DAY_OF_MONTH));
+
+                        Log.d(TAG, "run: curDay:" + currentDay + ",days:" + days);
+                        datePickerTimeline.setOnDateSelectedListener(new OnDateSelectedListener() {
+                            @Override
+                            public void onDateSelected(int year, int month, int day, int dayOfWeek) {
+                                if (periodsLoaded) {
+                                    Log.d("TAG", "onDateSelected: " + year + "/" + month + "/" + day + "/" + dayOfWeek);
+                                    if (!items.isEmpty())
+                                        items.clear(); //bugfix for inconsistency detected
+                                    Calendar newCal = Calendar.getInstance();
+                                    newCal.set(year, month, day, 0, 0);
+                                    Calendar initCal = Calendar.getInstance();
+                                    initCal.setTime(initDate);
+                                    initCal.set(Calendar.HOUR, 0);
+                                    initCal.set(Calendar.MINUTE, 0);
+                                    initCal.set(Calendar.MILLISECOND, 0);
+                                    //Toast.makeText(getContext(), "selected: " + ((newCal.getTimeInMillis() - initCal.getTimeInMillis())/MILLIS_PER_DAY), Toast.LENGTH_SHORT).show();
+                                    viewPager.setCurrentItem((int) ((newCal.getTimeInMillis() - initCal.getTimeInMillis()) / MILLIS_PER_DAY));
+                                } else {
+                                    Toast.makeText(getContext(), "Подождите, пока завершится загрузка", Toast.LENGTH_SHORT).show();
+                                    Calendar cal = Calendar.getInstance();
+                                    setDateToDatePicker(cal);
+                                    //TODO: back to prev date
+                                }
+                            }
+
+                            @Override
+                            public void onDisabledDateSelected(int year, int month, int day, int dayOfWeek, boolean isDisabled) {
+                                Log.d(TAG, "onDisabledDateSelected: Disabled Date Selected, doing nothing");
+                            }
+                        });
+
+                    }
+                });
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                Log.d(TAG, "onpost: err :(");
+            }
+        }
+
 
     }
-
-
 }

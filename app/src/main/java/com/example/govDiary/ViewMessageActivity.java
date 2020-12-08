@@ -37,6 +37,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.channels.NoConnectionPendingException;
 import java.text.SimpleDateFormat;
@@ -90,16 +91,13 @@ public class ViewMessageActivity extends AppCompatActivity {
     }
 
     private class getMessage extends AsyncTask<String, Integer, Void> {
-
-
+        Response response;
+        String responseString;
         @Override
-        protected Void doInBackground(String... strings) {
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
             try {
-
-                Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/getmessageinfo?id=" + id + "&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getApplicationContext(), false); /*
-                 //GET /apiv3/getmessageinfo?id=6180&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=089261c48824b50747cc49f9e274681bc374c3eabb30968d37620___84069&vendor=edu HTTP/1.1
-               // */
-                JSONObject messageJSON = (new JSONObject(response.body().string())).getJSONObject("response").getJSONObject("result").getJSONObject("message");
+                JSONObject messageJSON = (new JSONObject(responseString)).getJSONObject("response").getJSONObject("result").getJSONObject("message");
                 String dateS = messageJSON.getString("date");
                 String subjectS = messageJSON.getString("subject");
                 String textS = messageJSON.getString("text");
@@ -109,7 +107,7 @@ public class ViewMessageActivity extends AppCompatActivity {
                         date.setText(dateS);
                         topic.setText(subjectS);
                         text.setText(Html.fromHtml(textS));
-                        users.setText(userFromTo);
+                        users.setText(userFromTo.substring(0, userFromTo.length() - 2));
                         ColorGenerator generator = ColorGenerator.MATERIAL; //generating avatar
                         TextDrawable drawable = TextDrawable.builder()
                                 .buildRect(userFromTo.substring(0,1), generator.getColor(userFromTo.toString().split(" ")[0]));
@@ -136,18 +134,18 @@ public class ViewMessageActivity extends AppCompatActivity {
                                     lastUrlRequest = filesJson.getJSONObject(onclicklistenerI).getString("link");
                                     lastFilenameT = filenameT;
                                     if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-                                    if(checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED){
-                                        String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
+                                        if(checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED){
+                                            String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
-                                        requestPermissions(permissions, PERMISSION_STORAGE_CODE);
+                                            requestPermissions(permissions, PERMISSION_STORAGE_CODE);
+                                        }
+                                        else{
+                                            startDownload(lastUrlRequest, lastFilenameT);
+                                        }
                                     }
                                     else{
                                         startDownload(lastUrlRequest, lastFilenameT);
                                     }
-                                }
-                                else{
-                                    startDownload(lastUrlRequest, lastFilenameT);
-                                }
                                 } catch (JSONException e) {
                                     e.printStackTrace();
                                 }
@@ -173,8 +171,16 @@ public class ViewMessageActivity extends AppCompatActivity {
             catch(Exception ex){
                 ex.printStackTrace();
             }
+        }
 
-
+        @Override
+        protected Void doInBackground(String... strings) {
+            response = Api.sendRequest("https://edu.gounn.ru/apiv3/getmessageinfo?id=" + id + "&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, getApplicationContext(), false);
+            try {
+                responseString = response.body().string();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             return null;
 
 

@@ -7,6 +7,8 @@
     <string name="tab_text_4">Четверг</string>
     <string name="tab_text_5">Пятница</string>
     <string name="tab_text_6">Суббота</string>
+    <string name="no_lessons">Уроков нет &#128512;</string>
+    <string name="error_widget">Ошибка &#128543;</string>
     <string name="appbar_scrolling_view_behavior" translatable="false">android.support.design.widget.AppBarLayout$ScrollingViewBehavior</string>
     <string name="mode">Day</string>
 
@@ -17,4 +19,6 @@
     <string name="crash_button_positive">Да</string>
     <string name="crash_button_negative">Нет</string>
     <string name="subjectCrash">Дневник - отчет об ошибке</string>
+    <string name="appwidget_text">EXAMPLE</string>
+    <string name="add_widget">Add widget</string>
 </resources>

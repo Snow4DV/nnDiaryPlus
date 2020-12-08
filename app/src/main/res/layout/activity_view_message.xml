@@ -13,7 +13,9 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
-
+<ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -34,6 +36,7 @@
             android:layout_height="wrap_content"
             android:padding="13dp"
             android:text=""
+            android:autoLink="web"
             android:textAppearance="@style/TextAppearance.AppCompat.Title" />
 
         <RelativeLayout
@@ -88,6 +91,7 @@
         <TextView
             android:id="@+id/textMessage"
             android:layout_width="match_parent"
+            android:autoLink="web"
             android:layout_height="wrap_content"
             android:padding="10dp"
             android:textColor="?android:attr/textColorPrimary"
@@ -97,4 +101,5 @@
 
 
     </LinearLayout>
+</ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

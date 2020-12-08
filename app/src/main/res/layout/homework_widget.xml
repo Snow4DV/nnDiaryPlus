@@ -1,0 +1,47 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:padding="@dimen/widget_margin">
+
+
+
+    <TextView
+        android:id="@+id/appwidget_text"
+        android:layout_width="match_parent"
+        android:layout_centerHorizontal="true"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:background="@drawable/rounded_corners_shape"
+        android:backgroundTint="@color/primary"
+        android:contentDescription="@string/appwidget_text"
+        android:text="Четверг, 31.12"
+        android:textColor="#ffffff"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+    <ListView
+        android:layout_marginTop="5dp"
+        android:scrollbarStyle="@null"
+        android:id="@+id/listLessons"
+        android:layout_below="@id/appwidget_text"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_centerHorizontal="true"
+        android:padding="3dp"
+        android:layout_centerVertical="true"
+        android:textStyle="bold"
+        android:id="@+id/emptyTextView"
+        android:textSize="14sp"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="@color/primary_dark"
+        android:background="@drawable/rounded_corners_shape"
+        android:text="@string/error_widget"/>
+
+
+
+</RelativeLayout>
