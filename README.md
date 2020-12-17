@@ -14,11 +14,12 @@ as-is.
 * Сообщения
 * Удобный виджет с просмотром Д\З и расписания
 * Темная тема на Android 10 и выше 
-Solarized dark             |  Solarized Ocean
-:-------------------------:|:-------------------------:
-<img width="200" alt="portfolio_view" src="https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/1.png"> | <img width="200" alt="portfolio_view" src="https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/2.png">
-
+<p float="left">
+<img width="200" alt="portfolio_view" src="https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/1.png"> 
+<img width="200" alt="portfolio_view" src="https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/2.png">
 <img width="200" alt="portfolio_view" src="https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/3.png">
+</p>
+
 <img width="200" alt="portfolio_view" src="https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/4.png">
 <img width="200" alt="portfolio_view" src="https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/5.png">
 <img width="200" alt="portfolio_view" src="https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/6.png">
