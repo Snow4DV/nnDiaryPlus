@@ -14,7 +14,7 @@ as-is.
 * Сообщения
 * Удобный виджет с просмотром Д\З и расписания
 * Темная тема на Android 10 и выше 
-![alt text](https://github.com/snowadv/nnDiaryPlus/blob/master/Screenshot_20201210-070934_Электронный_дневник~2.png)
+![alt text](https://github.com/snowadv/nnDiaryPlus/blob/master/1.png)
 
 # Чего пока нет или //TODO
 * Функционал отправки сообщения (в работе)
