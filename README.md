@@ -15,6 +15,8 @@ as-is.
 * Удобный виджет с просмотром Д\З и расписания
 * Темная тема на Android 10 и выше 
 ![alt text](https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/1.png)
+![alt text](https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/2.png)
+
 
 # Чего пока нет или //TODO
 * Функционал отправки сообщения (в работе)
