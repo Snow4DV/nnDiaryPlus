@@ -14,8 +14,9 @@ as-is.
 * Сообщения
 * Удобный виджет с просмотром Д\З и расписания
 * Темная тема на Android 10 и выше 
-![alt text](https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/1.png){:height="1170px" width="540px"}
-![alt text](https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/2.png){:height="1170px" width="540px"}
+![alt text](https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/1.png){height="1170px" width="540px"}
+![alt text](https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/2.png){height="1170px" width="540px"}
+<img width="200" alt="portfolio_view" src="https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/2.png">
 
 
 # Чего пока нет или //TODO
