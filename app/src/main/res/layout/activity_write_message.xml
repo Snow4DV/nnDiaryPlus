@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:fillViewport="true"
+    android:layout_height="match_parent"
+    tools:context=".WriteMessageActivity">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:showDividers="end"
+        android:divider="@android:drawable/divider_horizontal_dark"
+        android:orientation="vertical">
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:padding="5dp"
+            android:id="@+id/textViewTo"
+            android:layout_centerVertical="true"
+            android:layout_height="wrap_content"
+            android:text="Кому"
+            android:textSize="20dp"/>
+
+        <HorizontalScrollView
+            android:layout_width="wrap_content"
+            android:id="@+id/toWhoLayout"
+            android:onClick="toUsersClick"
+            android:layout_toEndOf="@+id/textViewTo"
+            android:layout_height="match_parent"/>
+
+    </RelativeLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/darker_gray"/>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:padding="5dp"
+                android:id="@+id/textViewTopic"
+                android:layout_centerVertical="true"
+                android:layout_height="wrap_content"
+                android:text="Тема"
+                android:textSize="20dp"/>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:id="@+id/inputTopic"/>
+
+        </RelativeLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/darker_gray"/>
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:minHeight="90dp"
+            android:hint="Текст"
+            android:layout_height="wrap_content"
+            android:id="@+id/textInput"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Отправить"
+            android:onClick="sendButton"
+            android:layout_gravity="center"/>
+    </LinearLayout>
+
+
+</ScrollView>

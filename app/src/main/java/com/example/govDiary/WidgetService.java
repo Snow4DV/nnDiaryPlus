@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 
 import okhttp3.Response;
 
@@ -50,7 +51,7 @@ public class WidgetService extends RemoteViewsService {
             this.appWidgetID = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
             pref = context.getSharedPreferences("LogData",Context.MODE_PRIVATE);
             prefWidget = context.getSharedPreferences("widgetPrefs",Context.MODE_PRIVATE);
-            Calendar curCalendar = Calendar.getInstance();
+            Calendar curCalendar = Calendar.getInstance(Locale.FRANCE);
             Log.d(TAG, "WidgetFactory: appwidgetid:" + appWidgetID);
             Log.d(TAG, "WidgetFactory: checking if it2 has bool " + prefWidget.contains(appWidgetID + "td"));
             if(!prefWidget.getBoolean( (appWidgetID) + "td", false)){
@@ -71,9 +72,14 @@ public class WidgetService extends RemoteViewsService {
 
         @Override
         public void onDataSetChanged() {
-            items.clear();
+            if(!pref.getString("loginStatus", "d").equals("success")) {
+                items.clear();
+                return;
+            }
+            ArrayList<Lesson> itemsBackup = items;
             Response response = Api.sendRequest("https://edu.gounn.ru/apiv3/getdiary?student=" + studentID + "&days=" + dateString + "-" + dateString + "&rings=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu&unkn=aa", null, context, true);
             String responseString = "";
+            boolean doneSuccessfully = false;
             try {
                 responseString = response.body().string();
             } catch (IOException e) {
@@ -166,16 +172,12 @@ public class WidgetService extends RemoteViewsService {
                     Log.d("WIDGET_ELDIARY", "fetchHWitemslength: " + items.size());
                 }
                 return;
-            } catch (IllegalArgumentException e){
-                Log.e("WIDGET_ELDIARY", "fetchHwERROR: ", e);
-                Log.d("WIDGET_ELDIARY", "doInBackground: response=null");
-                return;
-
             }
             catch (Exception e) {
                 Log.e("WIDGET_ELDIARY", "fetchHwERROR: ", e);
                 Log.e("WIDGET_ELDIARY", "fetchHwERROR: " + responseString);
                 Log.e("TAG", "getDiary: " + "JSON/IO ex");
+                items = itemsBackup;
                 return;
             }
 
@@ -195,7 +197,7 @@ public class WidgetService extends RemoteViewsService {
         @Override
         public RemoteViews getViewAt(int i) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_lesson);
-            views.setTextViewText(R.id.lessonName, items.get(i).name);
+            views.setTextViewText(R.id.lessonName, items.get(i).number + ". " + items.get(i).name);
             if(items.get(i).files.size() != 0) {
                 views.setViewVisibility(R.id.fileAttached, View.VISIBLE);
             }
@@ -210,6 +212,7 @@ public class WidgetService extends RemoteViewsService {
                 views.setViewVisibility(R.id.lessonHomeWork, View.VISIBLE);
                 views.setTextViewText(R.id.lessonHomeWork, items.get(i).homework);
             }
+
             return views;
         }
 

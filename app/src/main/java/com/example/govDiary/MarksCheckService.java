@@ -9,17 +9,40 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.Maps;
+import com.google.common.reflect.TypeToken;
+import com.google.gson.Gson;
+
 import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.riversun.okhttp3.OkHttp3CookieHelper;
 
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.net.ConnectException;
+import java.nio.channels.NoConnectionPendingException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
 
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
@@ -29,13 +52,16 @@ import okhttp3.Response;
 
 public class MarksCheckService extends Worker {
     SharedPreferences pref;
-    HashMap<Integer, String> subjects;
-    String id2f, loginf, IPf, passf;
-    String classidf, student;
-    String subjectsUnformatted;
-    int itemCounter = 0;
+
     String TAG = "marksCheckService";
     SharedPreferences.Editor editor;
+    String studentID = "";
+    String authToken = "";
+    String lastStartDate = "";
+    String lastEndDate = "";
+    ArrayList<Period> periodList;
+    LinkedHashMap<String, ArrayList<Mark>> markedLessons;
+    private AsyncTask<String, Integer, Void> getMarksAsyncTasks;
 
     public MarksCheckService(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
@@ -44,19 +70,13 @@ public class MarksCheckService extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        subjects = new HashMap<>();
+        periodList = new ArrayList<>();
+        markedLessons = new LinkedHashMap<>();
         pref = getApplicationContext().getSharedPreferences("LogData", Context.MODE_PRIVATE);
         editor = pref.edit();
-        id2f = pref.getString("id2", "errorGettingIntent");
-        loginf = pref.getString("login", "errLogin");
-        IPf = pref.getString("IP", "errIP");
-        classidf = pref.getString("classidf", "errClass");
-        subjectsUnformatted = pref.getString("subjects", "[]");
-        student = pref.getString("id", "studentIdErr");
-        passf = pref.getString("passwordSHA1", "errPassSHA1");
+        studentID = pref.getString("studentID", "errPref");
+        authToken = pref.getString("authToken", "errPref");
 
-        getMarks gM = new getMarks();
-        gM.execute();
 
 
 
@@ -147,7 +167,7 @@ public class MarksCheckService extends Worker {
         }
     }
 
-    private class getMarks extends AsyncTask<String, Integer, Void> {
+   /*private class getMarks extends AsyncTask<String, Integer, Void> {
 
 
         @Override
@@ -229,4 +249,211 @@ public class MarksCheckService extends Worker {
             return null;
         }
     }
+
+    */
+
+    private class getPeriods extends AsyncTask<String, Integer, Void> {  //TODO: YEAR FINAL ASSESSMENTS FIX!!!!!!!!!
+        Response response;
+        String responseString;
+        @Override
+        protected Void doInBackground(String... strings) {
+            response = Api.sendRequest("https://edu.gounn.ru/apiv3/getperiods?weeks=false&show_disabled=true&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, null, false);
+            try {
+                responseString = response.body().string();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            try {
+                if (response == null) throw new NoConnectionPendingException();
+                JSONArray periods = (new JSONObject(responseString)).getJSONObject("response").getJSONObject("result").getJSONArray("students").getJSONObject(0).getJSONArray("periods");
+                String yearStart = "", yearEnd = "";
+                for (int i = 0; i < periods.length(); i++) {
+                    String name = periods.getJSONObject(i).getString("fullname");
+                    String startDate = periods.getJSONObject(i).getString("start");
+                    String endDate = periods.getJSONObject(i).getString("end");
+                    periodList.add(new Period(name, startDate, endDate));
+                    Log.d(TAG, "Adding period to periodList: " + periodList.get(i).name + "/" + periodList.get(i).startDate + "/" + periodList.get(i).endDate);
+                    if(i == periods.length() - 1){
+                        yearEnd = periodList.get(i).endDate;
+                    }
+                    else if(i == 0){
+                        yearStart = periodList.get(i).startDate;
+                    }
+
+                }
+                //generating year period:
+                periodList.add(new Period("Год", yearStart, yearEnd));
+                Log.d(TAG, "doInBackground: students json period list size: " + periodList.size());
+
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }
+                try {
+                    String firstDateAfterFoundStart = null;
+                    String firstDateAfterFoundEnd = null;
+                    int lastCounterFound = 0;
+                    for (int i = 0; i < periodList.size(); i++) {
+
+                        Date startingDate = new SimpleDateFormat("yyyyMMdd").parse(periodList.get(i).startDate);
+                        Date endingDate = new SimpleDateFormat("yyyyMMdd").parse(periodList.get(i).endDate);
+                        Date curDate = Calendar.getInstance().getTime();
+                        if(firstDateAfterFoundStart == null && curDate.after(startingDate)){
+                            firstDateAfterFoundStart = periodList.get(i).startDate;
+                            firstDateAfterFoundEnd = periodList.get(i).endDate;
+                            lastCounterFound = i;
+                        }
+                        if(curDate.after(startingDate) && curDate.before(endingDate)){
+                            firstDateAfterFoundStart = null;
+                            Log.d(TAG, "position period: " + i);
+                            final int counter = i;
+                            final Handler handler = new Handler(Looper.getMainLooper());
+                            break;
+                        }
+
+                    }
+
+                    if(firstDateAfterFoundStart != null){
+                        final int lastCounter = lastCounterFound;
+                        getMarksAsyncTasks = new getNewMarks(firstDateAfterFoundStart, firstDateAfterFoundEnd).execute();
+                    }
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+
+
+            super.onPostExecute(aVoid);
+        }
+    }
+
+
+    private class getNewMarks extends AsyncTask<String, Integer, Void> {
+        String startDate, endDate;
+        Response response;
+        String responseString;
+
+        public getNewMarks(String startDate, String endDate) {
+            this.startDate = startDate;
+            this.endDate = endDate;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            try{
+                //Getting all finalmarks - bad implementation because of the diary's api - they separated the marks and finalmarks :|
+                HashMap<String, String> finalMarks = new HashMap<>();
+
+
+                //Getting the marks
+                if(response == null) throw new ConnectException();
+                JSONArray marks = null;
+                try {
+                    marks = (new JSONObject(responseString)).getJSONObject("response").getJSONObject("result").getJSONObject("students").getJSONObject(studentID).getJSONArray("lessons");
+                }
+                catch(Exception e){
+                    throw new IllegalArgumentException();
+                }
+                for (int i = 0; i < marks.length(); i++) {
+                    JSONObject mark = marks.getJSONObject(i);
+                    String name = mark.getString("name");
+                    Double average = mark.getDouble("average");
+                    JSONArray marksJsonList = mark.getJSONArray("marks");
+                    ArrayList<Mark> tMarklist = new ArrayList<>();
+                    //marks fori
+                    Log.d(TAG, "doInBackgroundMarkGetting: " + marksJsonList.toString());
+                    for (int j = 0; j < marksJsonList.length(); j++) {
+                        String markStr = marksJsonList.getJSONObject(j).getString("value");
+                        String comment = marksJsonList.getJSONObject(j).getString("comment");
+                        boolean counted = marksJsonList.getJSONObject(j).getBoolean("count");
+                        String lessonComment = marksJsonList.getJSONObject(j).getString("lesson_comment");
+                        String date = marksJsonList.getJSONObject(j).getString("date");
+                        String mType = "";
+                        double weight = 1.0;
+                        if(marksJsonList.getJSONObject(j).has("mtype")) mType = marksJsonList.getJSONObject(j).getJSONObject("mtype").getString("type");
+                        if(marksJsonList.getJSONObject(j).has("weight")) weight = marksJsonList.getJSONObject(j).getDouble("weight");
+                        if(!counted) weight = 0.0;
+                        tMarklist.add(new Mark(markStr, weight, date, mType, comment, lessonComment));
+                    }
+                    //adding info to list
+                    markedLessons.put(name,tMarklist);
+                }
+                Gson gson = new Gson();
+                Log.d(TAG, "markedLessonsGettingFinished(size): " + markedLessons.size());
+                lastStartDate = startDate;
+                lastEndDate = endDate;
+                //obtaining previous mark list and checking for new marks
+                ArrayList<Mark> newMarks = new ArrayList<>();
+                LinkedHashMap<String, ArrayList<Mark>> newMarksMap = new LinkedHashMap<>();
+                if(pref.contains("lastMarks")){
+                    Type listType = new TypeToken<LinkedHashMap<String, ArrayList<Mark>>>(){}.getType();
+                    LinkedHashMap<String, ArrayList<Mark>> prevMarkedLessons = gson.fromJson(pref.getString("lastMarks", ""), listType);
+                    //Map<String, MapDifference.ValueDifference<ArrayList<Mark>>> difference = Maps.difference(markedLessons, prevMarkedLessons).entriesDiffering();
+                    for(Map.Entry<String, ArrayList<Mark>> entry: prevMarkedLessons.entrySet()){ //deleting marks with same date and value (comparator method and equals overrided to do so)
+                        if(markedLessons.containsKey(entry.getKey())){
+                            ArrayList<Mark> prevMarks = entry.getValue();
+                            ArrayList<Mark> curMarks = markedLessons.get(entry.getKey()); //edited to remove the same marks - only new marks are left
+                            for (int i = 0; i < prevMarks.size(); i++) {
+                                if(curMarks.contains(prevMarks.get(i))){
+                                    curMarks.remove(prevMarks.get(i));
+                                }
+                            }
+                            newMarksMap.put(entry.getKey(), curMarks);
+                        }
+                    }
+
+
+                }
+                for(Map.Entry<String, ArrayList<Mark>> entry: newMarksMap.entrySet()){
+                   StringBuilder notif = new StringBuilder();
+                   if(entry.getValue().size() == 1){
+                       notif = new StringBuilder(entry.getKey() + ": новая оценка - " + entry.getValue().get(0));
+                       createNotification(notif.toString());
+                   }
+                   else if(entry.getValue().size() > 1){
+                       ArrayList<Mark> entryMarkList = entry.getValue();
+                       notif = new StringBuilder(entry.getKey() + ": новые оценки - ");
+                       for (int i = 0; i < entryMarkList.size(); i++) {
+                           notif.append(entryMarkList.get(i).mark);
+                           if(i != entryMarkList.size() - 1) notif.append(',');
+                       }
+                   createNotification(notif.toString());
+                   }
+                }
+
+
+                //putting last list of marks to sharedpref
+                editor.putString("lastMarks", gson.toJson(markedLessons));
+                editor.commit();
+            }
+            catch(IllegalArgumentException e){
+                e.printStackTrace();
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }
+            super.onPostExecute(aVoid);
+        }
+
+        @Override
+        protected Void doInBackground(String... strings) {
+            response = Api.sendRequest("https://edu.gounn.ru/apiv3/getmarks?student=" + studentID + "&days=" + startDate + "-" + endDate + "&devkey=d9ca53f1e47e9d2b9493d35e2a5e36&out_format=json&auth_token=" + authToken + "&vendor=edu", null, null, false);
+            try {
+                responseString = response.body().string();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return null;
+
+        }
+
+    }
+
+
 }

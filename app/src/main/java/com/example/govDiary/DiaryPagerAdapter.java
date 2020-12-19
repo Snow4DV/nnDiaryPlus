@@ -47,6 +47,8 @@ public class DiaryPagerAdapter extends FragmentStateAdapter {
         return amount;
     }
 
+
+
     @Override
     public Fragment createFragment(int position) {
         return getFragmentBasedOnPosition(position);

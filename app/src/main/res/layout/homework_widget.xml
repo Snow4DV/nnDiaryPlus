@@ -6,27 +6,56 @@
 
 
 
-    <TextView
-        android:id="@+id/appwidget_text"
-        android:layout_width="match_parent"
-        android:layout_centerHorizontal="true"
+    <RelativeLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAlignment="center"
         android:background="@drawable/rounded_corners_shape"
         android:backgroundTint="@color/primary"
-        android:contentDescription="@string/appwidget_text"
-        android:text="Четверг, 31.12"
-        android:textColor="#ffffff"
-        android:textSize="18sp"
-        android:textStyle="bold" />
+        android:id="@+id/header">
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:tint="@color/white"
+            android:src="@drawable/ic_baseline_refresh_24"
+            android:background="@null"/>
+        <TextView
+            android:id="@+id/appwidget_text"
+            android:layout_width="match_parent"
+            android:layout_centerHorizontal="true"
+            android:layout_height="wrap_content"
+            android:textAlignment="center"
+
+            android:contentDescription="@string/appwidget_text"
+            android:text="Загрузка..."
+            android:textColor="#ffffff"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/update_time"
+            android:layout_width="match_parent"
+            android:layout_below="@+id/appwidget_text"
+            android:layout_centerHorizontal="true"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-4dp"
+            android:textAlignment="center"
+            android:contentDescription="@string/appwidget_text"
+            android:text="Виджет еще не обновлялся"
+            android:textColor="#ffffff"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
     <ListView
-        android:layout_marginTop="5dp"
-        android:scrollbarStyle="@null"
         android:id="@+id/listLessons"
-        android:layout_below="@id/appwidget_text"
+        android:divider="@null"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical" />
+        android:layout_below="@id/header"
+        android:layout_marginTop="5dp"
+        android:orientation="vertical"
+        android:scrollbarStyle="@null" />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

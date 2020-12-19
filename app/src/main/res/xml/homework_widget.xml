@@ -4,7 +4,7 @@
     android:initialLayout="@layout/homework_widget"
     android:minWidth="180dp"
     android:minHeight="110dp"
-    android:previewImage="@drawable/example_appwidget_preview"
+    android:previewImage="@drawable/widgetpreview"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="3600000"
     android:configure="com.example.govDiary.WidgetConfigurationActivity"

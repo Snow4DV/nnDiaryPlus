@@ -59,12 +59,14 @@ public class Api {
 
 
         //END
-        OkHttpClient client =  new OkHttpClient.Builder().sslSocketFactory(sslSocketFactory, (X509TrustManager)trustAllCerts[0]).hostnameVerifier(new HostnameVerifier() {
+        OkHttpClient client =  new OkHttpClient.Builder()
+               /* .sslSocketFactory(sslSocketFactory, (X509TrustManager)trustAllCerts[0]).hostnameVerifier(new HostnameVerifier() {
             @Override
             public boolean verify(String hostname, SSLSession session) {
                 return true;
             }
         })
+                /*.proxy(new Proxy(Proxy.Type.HTTP,new InetSocketAddress("192.168.1.10",25565)))*/
                 .build(); //PROXY FOR TESTING
         Request request;
         if(formBody == null){
@@ -81,7 +83,7 @@ public class Api {
         Response response = null;
         try {
             response = client.newCall(request).execute();
-            if(response.code() == 400 && !ifLogin){
+            if(response.code() == 400 && !ifLogin && context != null){
                 SharedPreferences pref = context.getSharedPreferences("LogData",Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = pref.edit();
                 Boolean willStart = false;

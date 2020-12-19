@@ -1,6 +1,8 @@
 package com.example.govDiary;
 
-public class Mark {
+import androidx.annotation.Nullable;
+
+public class Mark  implements Comparable<Mark>{
     String mark;
     String date;
     String markType;
@@ -15,5 +17,25 @@ public class Mark {
         this.date = date;
         this.weight = weight;
         this.lessonComment = lessonComment;
+    }
+
+    @Override
+    public int compareTo(Mark m) {
+        if(m.date.equals(date) && m.mark.equals(mark)){
+            return 1;
+        }
+        else return 0;
+
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+        if (obj == null)
+            return false;
+        if (!(obj instanceof Mark))
+            return false;
+        Mark m = (Mark) obj;
+        if(m.mark.equals(mark) && m.date.equals(date)) return true;
+        return false;
     }
 }

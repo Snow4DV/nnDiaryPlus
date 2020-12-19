@@ -51,6 +51,13 @@ import com.mikepenz.materialdrawer.model.ProfileDrawerItem;
 import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
+import org.acra.ACRA;
+import org.acra.annotation.AcraCore;
+import org.acra.annotation.AcraHttpSender;
+import org.acra.config.CoreConfigurationBuilder;
+import org.acra.config.HttpSenderConfigurationBuilder;
+import org.acra.data.StringFormat;
+import org.acra.sender.HttpSender;
 import org.json.JSONObject;
 
 import java.util.HashMap;
@@ -59,175 +66,176 @@ import java.util.concurrent.TimeUnit;
 
 
 public class JournalActivity extends AppCompatActivity { //TODO: resulting marks, timetable, maybe disable dates
-    private static final int MIN_TIME_INTERVAL_BETWEEN_BACK_CLICKS = 2000;
-    private long backPressedTime;
-    Toolbar toolBar;
-    public Context context;
-    String studentFIO;
-    View mTooltipView;
-    Drawer drawer;
-    LinkedHashMap<String, JSONObject> daysJSON;
-    int runningActivity = 1;
-    FragmentTransaction ft2 = null;
-    FinalMarksFragment finalMarksFragment;
-    TimetableFragment timetableFragment;
-    FragmentManager myFragmentManager;
-    MessagesTabFragment messagesTabFragment;
-    TextView title;
-    BottomNavigationView buttomNavigationMenu;
-    final static String TAG_1 = "FRAGMENT_1";
-    DairyFragment dairyFragment;
-    String TAG = "JorunalActivity";
-    SharedPreferences pref;
+        private static final int MIN_TIME_INTERVAL_BETWEEN_BACK_CLICKS = 2000;
+        private long backPressedTime;
+        Toolbar toolBar;
+        public Context context;
+        String studentFIO;
+        View mTooltipView;
+        Drawer drawer;
+        LinkedHashMap<String, JSONObject> daysJSON;
+        int runningActivity = 1;
+        FragmentTransaction ft2 = null;
+        FinalMarksFragment finalMarksFragment;
+        TimetableFragment timetableFragment;
+        FragmentManager myFragmentManager;
+        MessagesTabFragment messagesTabFragment;
+        TextView title;
+        BottomNavigationView buttomNavigationMenu;
+        final static String TAG_1 = "FRAGMENT_1";
+        DairyFragment dairyFragment;
+        String TAG = "JorunalActivity";
+        SharedPreferences pref;
 
-    TextView titleToolbar;
-    ImageButton multibutton;
-    SharedPreferences.Editor editor;
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        daysJSON = new LinkedHashMap<>();
-        pref = getApplicationContext().getSharedPreferences("LogData", Context.MODE_PRIVATE); // saving data of application
-        editor = pref.edit();
-        setContentView(R.layout.activity_journal);
-        buttomNavigationMenu = findViewById(R.id.bottomNavigationView);
-        buttomNavigationMenu.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                int index;
-                switch(item.getItemId()){
-                    case R.id.diarymenu:
-                        index = 1;
-                        break;
-                    case R.id.timetablemenu:
-                        index = 2;
-                        break;
-                    case R.id.fmarksmenu:
-                        index = 3;
-                        break;
-                    case R.id.messagesmenu:
-                        index = 4;
-                        break;
-                    default:
-                        index = 1;
-                        break;
+        TextView titleToolbar;
+        ImageButton multibutton;
+        SharedPreferences.Editor editor;
+
+        @Override
+        protected void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            daysJSON = new LinkedHashMap<>();
+            pref = getApplicationContext().getSharedPreferences("LogData", Context.MODE_PRIVATE); // saving data of application
+            editor = pref.edit();
+            setContentView(R.layout.activity_journal);
+            buttomNavigationMenu = findViewById(R.id.bottomNavigationView);
+            buttomNavigationMenu.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+                @Override
+                public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                    int index;
+                    switch (item.getItemId()) {
+                        case R.id.diarymenu:
+                            index = 1;
+                            break;
+                        case R.id.timetablemenu:
+                            index = 2;
+                            break;
+                        case R.id.fmarksmenu:
+                            index = 3;
+                            break;
+                        case R.id.messagesmenu:
+                            index = 4;
+                            break;
+                        default:
+                            index = 1;
+                            break;
+                    }
+                    drawer.setSelection(index, false);
+                    materialDrawerItemClickHolder(index);
+                    return true;
                 }
-                drawer.setSelection(index, false);
-                materialDrawerItemClickHolder(index);
-                return true;
-            }
-        });
-                context = getApplicationContext();
-        multibutton = findViewById(R.id.multibutton);
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        myFragmentManager = getSupportFragmentManager();
-        dairyFragment = new DairyFragment();
-        finalMarksFragment = new FinalMarksFragment();
-        toolBar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolBar);
-        toolBar.setBackground(getResources().getDrawable(R.color.colorToolbar));
-        titleToolbar = findViewById(R.id.titleToolbar);
-        //fio in toolbar
-        studentFIO = pref.getString("name", "Ошибка");
-        title = findViewById(R.id.title);
-        Log.d(TAG, "StudentName: " + studentFIO);
-        titleToolbar.setText("Дневник");
-        //Getting the drawable icon with letter inside
-        ColorGenerator generator = ColorGenerator.MATERIAL;
-        TextDrawable drawable = TextDrawable.builder()
-                .buildRect(String.valueOf((char)studentFIO.split(" ")[1].charAt(0)), generator.getColor((char)studentFIO.split(" ")[1].charAt(0)));
+            });
+            context = getApplicationContext();
+            multibutton = findViewById(R.id.multibutton);
+            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+            myFragmentManager = getSupportFragmentManager();
+            dairyFragment = new DairyFragment();
+            finalMarksFragment = new FinalMarksFragment();
+            toolBar = findViewById(R.id.toolbar);
+            setSupportActionBar(toolBar);
+            toolBar.setBackground(getResources().getDrawable(R.color.colorToolbar));
+            titleToolbar = findViewById(R.id.titleToolbar);
+            //fio in toolbar
+            studentFIO = pref.getString("name", "Ошибка");
+            title = findViewById(R.id.title);
+            Log.d(TAG, "StudentName: " + studentFIO);
+            titleToolbar.setText("Дневник");
+            //Getting the drawable icon with letter inside
+            ColorGenerator generator = ColorGenerator.MATERIAL;
+            TextDrawable drawable = TextDrawable.builder()
+                    .buildRect(String.valueOf((char) studentFIO.split(" ")[1].charAt(0)), generator.getColor((char) studentFIO.split(" ")[1].charAt(0)));
 
-        // Create the AccountHeader
-        AccountHeader headerResult = new AccountHeaderBuilder()
-                .withActivity(this)
-                .withHeaderBackground(R.drawable.gradient)
-                .addProfiles(
-                        new ProfileDrawerItem().withName(studentFIO).withEmail(pref.getString("schoolName", "Учебное заведение")).withIcon(drawable)
-                )
-                .withSelectionListEnabledForSingleProfile(false)
-                .build();
-        //creating drawer
-        PrimaryDrawerItem item1 = new PrimaryDrawerItem().withIdentifier(1).withName("Дневник").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_dairy));
-        PrimaryDrawerItem item2 = new PrimaryDrawerItem().withIdentifier(2).withName("Расписание").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_timetable));
-        PrimaryDrawerItem item3 = new PrimaryDrawerItem().withIdentifier(3).withName("Итоговые оценки").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_marks));
-        SecondaryDrawerItem item4 = new SecondaryDrawerItem().withName("Настройки").withIconTintingEnabled(true).withSelectable(false).withIcon(getDrawable(R.drawable.ic_settings));
-        SecondaryDrawerItem item5 = new SecondaryDrawerItem().withName("Выход из аккаунта").withIconTintingEnabled(true).withSelectable(false).withIcon(getDrawable(R.drawable.ic_logout));
-        PrimaryDrawerItem item6 = new PrimaryDrawerItem().withIdentifier(4).withName("Сообщения").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_baseline_message_24));
-        drawer = new DrawerBuilder().withActivity(this).withToolbar(toolBar).withAccountHeader(headerResult).addDrawerItems(
-                item1,
-                item2,
-                item3,
-                item6,
-                new DividerDrawerItem(),
-                item4,
-                item5
-        ) .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
-            @Override
-            public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
-                switch(position){
-                    case 1:
-                        buttomNavigationMenu.setSelectedItemId(R.id.diarymenu);
-                        break;
-                    case 2:
-                        buttomNavigationMenu.setSelectedItemId(R.id.timetablemenu);
-                        break;
-                    case 3:
-                        buttomNavigationMenu.setSelectedItemId(R.id.fmarksmenu);
-                        break;
-                    case 4:
-                        buttomNavigationMenu.setSelectedItemId(R.id.messagesmenu);
-                        break;
+            // Create the AccountHeader
+            AccountHeader headerResult = new AccountHeaderBuilder()
+                    .withActivity(this)
+                    .withHeaderBackground(R.drawable.gradient)
+                    .addProfiles(
+                            new ProfileDrawerItem().withName(studentFIO).withEmail(pref.getString("schoolName", "Учебное заведение")).withIcon(drawable)
+                    )
+                    .withSelectionListEnabledForSingleProfile(false)
+                    .build();
+            //creating drawer
+            PrimaryDrawerItem item1 = new PrimaryDrawerItem().withIdentifier(1).withName("Дневник").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_dairy));
+            PrimaryDrawerItem item2 = new PrimaryDrawerItem().withIdentifier(2).withName("Расписание").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_timetable));
+            PrimaryDrawerItem item3 = new PrimaryDrawerItem().withIdentifier(3).withName("Итоговые оценки").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_marks));
+            SecondaryDrawerItem item4 = new SecondaryDrawerItem().withName("Настройки").withIconTintingEnabled(true).withSelectable(false).withIcon(getDrawable(R.drawable.ic_settings));
+            SecondaryDrawerItem item5 = new SecondaryDrawerItem().withName("Выход из аккаунта").withIconTintingEnabled(true).withSelectable(false).withIcon(getDrawable(R.drawable.ic_logout));
+            PrimaryDrawerItem item6 = new PrimaryDrawerItem().withIdentifier(4).withName("Сообщения").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_baseline_message_24));
+            drawer = new DrawerBuilder().withActivity(this).withToolbar(toolBar).withAccountHeader(headerResult).addDrawerItems(
+                    item1,
+                    item2,
+                    item3,
+                    item6,
+                    new DividerDrawerItem(),
+                    item4,
+                    item5
+            ).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+                @Override
+                public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
+                    switch (position) {
+                        case 1:
+                            buttomNavigationMenu.setSelectedItemId(R.id.diarymenu);
+                            break;
+                        case 2:
+                            buttomNavigationMenu.setSelectedItemId(R.id.timetablemenu);
+                            break;
+                        case 3:
+                            buttomNavigationMenu.setSelectedItemId(R.id.fmarksmenu);
+                            break;
+                        case 4:
+                            buttomNavigationMenu.setSelectedItemId(R.id.messagesmenu);
+                            break;
+                    }
+                    return materialDrawerItemClickHolder(position);
                 }
-               return materialDrawerItemClickHolder(position);
+            })
+                    .withSavedInstance(savedInstanceState)
+                    .build();
+            for (Fragment fragment : getSupportFragmentManager().getFragments()) {
+                ft.remove(fragment);
             }
-        })
-                .withSavedInstance(savedInstanceState)
-                .build();
-        for (Fragment fragment : getSupportFragmentManager().getFragments()) {
-            ft.remove(fragment);
-        }
-        ft.add(R.id.dairy_fragment, dairyFragment);
-        ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_CLOSE);
-        ft.detach(dairyFragment).attach(dairyFragment);
-        ft.commit();
-        //Тест сервиса
-        //PeriodicWorkRequest periodicWorkRequest = new PeriodicWorkRequest.Builder(MarksCheckService.class, 15, TimeUnit.MINUTES).build();
-        //WorkManager.getInstance().enqueue(periodicWorkRequest);
-        OneTimeWorkRequest oneTimeWorkRequest = new OneTimeWorkRequest.Builder(MarksCheckService.class).build();
-        WorkManager.getInstance().enqueue(oneTimeWorkRequest);
+            ft.add(R.id.dairy_fragment, dairyFragment);
+            ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_CLOSE);
+            ft.detach(dairyFragment).attach(dairyFragment);
+            ft.commit();
+            //Тест сервиса
+            //PeriodicWorkRequest periodicWorkRequest = new PeriodicWorkRequest.Builder(MarksCheckService.class, 15, TimeUnit.MINUTES).build();
+            //WorkManager.getInstance().enqueue(periodicWorkRequest);
+            OneTimeWorkRequest oneTimeWorkRequest = new OneTimeWorkRequest.Builder(MarksCheckService.class).build();
+            WorkManager.getInstance().enqueue(oneTimeWorkRequest);
 
 
-        //предупреждение о сырости ПО
-        if(!pref.contains("notFirstRun")) {
-            AlertDialog alertDialog = new AlertDialog.Builder(JournalActivity.this).create();
-            alertDialog.setTitle("Привет!");
-            alertDialog.setMessage("Благодарю за загрузку моего ПО. Это одна из первых версий программы, поэтому в ней могут содержатся различные баги и недочеты. Я стараюсь по-максимуму совершенствовать эту прог");
-            alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                    new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                            editor.putString("notFirstRun", "notFirstRun");
-                            editor.commit();
-                        }
-                    });
-            alertDialog.show();
+            //предупреждение о сырости ПО
+            if (!pref.contains("notFirstRun")) {
+                AlertDialog alertDialog = new AlertDialog.Builder(JournalActivity.this).create();
+                alertDialog.setTitle("Привет!");
+                alertDialog.setMessage("Благодарю за загрузку моего ПО. Это одна из первых версий программы, поэтому в ней могут содержатся различные баги и недочеты. Я стараюсь по-максимуму совершенствовать эту программу, но вы тоже можете участвовать в ее разработке - программа имеет открытый исходный код (см. репозиторий   snow4DV)" +
+                        "Используя это приложение, вы соглашаетесь с отправкой анонимных отчетов об ошибках. Я не использую их для персонализации рекламы и т.д., только для отладки ПО.");
+                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                                editor.putString("notFirstRun", "notFirstRun");
+                                editor.commit();
+                            }
+                        });
+                alertDialog.show();
+            }
+            //добавляем переодическую задачу проверки оценок через WorkManager
+            if (!pref.contains("notificationServiceAdded")) {
+                PeriodicWorkRequest periodicWorkRequest = new PeriodicWorkRequest.Builder(MarksCheckService.class, 15, TimeUnit.MINUTES).addTag("NOTIFJOBAVERSMARKS").build();
+                WorkManager.getInstance().enqueueUniquePeriodicWork("notificationJobMarksAvers", ExistingPeriodicWorkPolicy.REPLACE, periodicWorkRequest);
+                editor.putString("notificationServiceAdded", "notificationServiceAdded");
+                editor.putBoolean("notifService", true);
+                editor.apply();
+            }
+            if (Build.VERSION.SDK_INT >= 21) {
+                Window window = this.getWindow();
+                window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                window.setStatusBarColor(ContextCompat.getColor(this, R.color.statusbarColor));
+            }
         }
-        //добавляем переодическую задачу проверки оценок через WorkManager
-        if(!pref.contains("notificationServiceAdded")){
-            PeriodicWorkRequest periodicWorkRequest = new PeriodicWorkRequest.Builder(MarksCheckService.class, 15, TimeUnit.MINUTES).addTag("NOTIFJOBAVERSMARKS").build();
-            WorkManager.getInstance().enqueueUniquePeriodicWork("notificationJobMarksAvers", ExistingPeriodicWorkPolicy.REPLACE, periodicWorkRequest);
-            editor.putString("notificationServiceAdded", "notificationServiceAdded");
-            editor.putBoolean("notifService", true);
-            editor.apply();
-        }
-        if (Build.VERSION.SDK_INT >= 21) {
-            Window window = this.getWindow();
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            window.setStatusBarColor(ContextCompat.getColor(this,R.color.statusbarColor));
-        }
-    }
-
 
 
     @Override

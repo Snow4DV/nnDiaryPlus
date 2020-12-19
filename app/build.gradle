@@ -34,6 +34,7 @@ dependencies {
     implementation "androidx.annotation:annotation:1.1.0"
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'cc.cloudist.acplibrary:library:1.2.1'
+    implementation "ch.acra:acra-http:5.7.0"
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation  "android.arch.work:work-runtime:1.0.1"

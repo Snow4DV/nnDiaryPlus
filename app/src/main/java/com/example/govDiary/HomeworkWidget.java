@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Objects;
 
 import okhttp3.Response;
@@ -49,7 +50,14 @@ public class HomeworkWidget extends AppWidgetProvider {
 
         // Construct the RemoteViews object
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.homework_widget);
-        Calendar curCal = Calendar.getInstance();
+
+        Intent serviceIntent = new Intent(context, WidgetService.class);
+        serviceIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+        serviceIntent.setData(Uri.parse(serviceIntent.toUri(Intent.URI_INTENT_SCHEME)));
+        views.setRemoteAdapter(R.id.listLessons, serviceIntent);
+        views.setEmptyView(R.id.listLessons, R.id.emptyTextView);
+        // Instruct the widget manager to update the widget
+        Calendar curCal = Calendar.getInstance(Locale.FRENCH);
         String titleText = "";
         Log.d(TAG, "updateAppWidget: appwidgetid is " + appWidgetId);
         Log.d(TAG, "WidgetFactory: checking if it1 has bool " + pref.contains(appWidgetId + "td"));
@@ -62,7 +70,7 @@ public class HomeworkWidget extends AppWidgetProvider {
                 break;
             case 3:
                 titleText+= "Вт, ";
-                        break;
+                break;
             case 4:
                 titleText +="Ср, ";
                 break;
@@ -78,14 +86,11 @@ public class HomeworkWidget extends AppWidgetProvider {
             case 1:
                 titleText+="Вскр, ";
         }
-        titleText+=curCal.get(Calendar.DAY_OF_MONTH)+"."+ (curCal.get(Calendar.MONTH) + 1);
+        SimpleDateFormat dfTime = new SimpleDateFormat("hh:mm");
+        SimpleDateFormat dfDayMonth = new SimpleDateFormat("dd.MM");
+        titleText+=dfDayMonth.format(curCal.getTime());
+        views.setTextViewText(R.id.update_time, "Обновлено в " + dfTime.format(curCal.getTime()));
         views.setTextViewText(R.id.appwidget_text, titleText);
-        Intent serviceIntent = new Intent(context, WidgetService.class);
-        serviceIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
-        serviceIntent.setData(Uri.parse(serviceIntent.toUri(Intent.URI_INTENT_SCHEME)));
-        views.setRemoteAdapter(R.id.listLessons, serviceIntent);
-        views.setEmptyView(R.id.listLessons, R.id.emptyTextView);
-        // Instruct the widget manager to update the widget
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
 

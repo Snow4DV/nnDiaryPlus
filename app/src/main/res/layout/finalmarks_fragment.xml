@@ -4,6 +4,32 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <LinearLayout
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:id="@+id/reloadLayout"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_height="wrap_content"
+            android:id="@+id/titleText"
+            android:foregroundTint="?android:attr/textColorPrimary"
+            android:text="Ошибка загрузки"
+            style="@style/TextAppearance.AppCompat.Title"
+            android:padding="10dp"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_gravity="center"
+            android:id="@+id/reloadButton"
+            android:layout_height="wrap_content"
+            android:text="Перезагрузить"/>
+    </LinearLayout>
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
