@@ -11,10 +11,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.Space;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,17 +23,16 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.LinkedHashMap;
 import java.util.List;
 
 import static android.content.ContentValues.TAG;
 
-public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
+public class AdapterDiary extends RecyclerView.Adapter<AdapterDiary.ViewHolder> {
     private LayoutInflater layoutInflater;
     private List<Lesson> lessons;
     private Context cont;
     private String[] colors = {"#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5", "#1565c0", "#03a9f4", "#00bcd4", "#009688", "#4caf50", "#8bc34a", "#cddc39", "#ffeb3b", "#ffc107", "#ff9800", "#ff5722", "#f44336", "#e91e63", "#9c27b0", "#673ab7", "#4caf50"}; //16 colors
-    Adapter(Context context, List<Lesson> lessons){
+    AdapterDiary(Context context, List<Lesson> lessons){
         this.layoutInflater = LayoutInflater.from(context);
         this.lessons = lessons;
         cont = context;

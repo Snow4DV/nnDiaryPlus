@@ -23,7 +23,7 @@ import java.util.ArrayList;
 
 import static android.content.ContentValues.TAG;
 
-public class AdapterFinalMarks extends RecyclerView.Adapter<AdapterFinalMarks.ViewHolder> {
+public class AdapterFinalMarks extends RecyclerView.Adapter<AdapterFinalMarks.ViewHolder> { //Adapter for final marks list
     private LayoutInflater layoutInflater;
     ArrayList<MarkedLesson> markedLessons;
     private Context cont;
@@ -42,7 +42,7 @@ public class AdapterFinalMarks extends RecyclerView.Adapter<AdapterFinalMarks.Vi
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        MarkAdapter adapterMark = new MarkAdapter(markedLessons.get(position).marks, cont);
+        MarkAdapter adapterMark = new MarkAdapter(markedLessons.get(position).marks, cont); //Creating custom MarkAdapter for marks lists in colored squares
         holder.gridView.setAdapter(adapterMark);
 
         //old code

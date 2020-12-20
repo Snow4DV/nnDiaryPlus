@@ -68,7 +68,7 @@ import static androidx.constraintlayout.widget.Constraints.TAG;
 import static androidx.fragment.app.FragmentStatePagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT;
 import static org.apache.commons.lang3.time.DateUtils.MILLIS_PER_DAY;
 
-public class DairyFragment extends Fragment {
+public class DiaryFragment extends Fragment {
     String authToken, studentID; // getting these from intent
     String lastDays = "";
     Date yearStartDate, yearEndDate;

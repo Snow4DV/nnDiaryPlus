@@ -37,7 +37,7 @@ import static androidx.constraintlayout.widget.Constraints.TAG;
 
 public class DiaryListFragment extends Fragment {
     RecyclerView recyclerView;
-    Adapter adapter;
+    AdapterDiary adapter;
     String authToken, studentID; // getting these from intent
     String lastDays = "";
     String paramDays;
@@ -70,7 +70,7 @@ public class DiaryListFragment extends Fragment {
         items = new ArrayList<>();
         recyclerView = dairyFragmentView.findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new Adapter(getContext(), items);
+        adapter = new AdapterDiary(getContext(), items);
         recyclerView.setAdapter(adapter);
         initColors();
         swipeRefreshLayout = dairyFragmentView.findViewById(R.id.swipe_container);

@@ -55,12 +55,11 @@ public class Api {
         catch(Exception e){
             e.printStackTrace();
         }
-        // Create an ssl socket factory with our all-trusting manager
 
 
         //END
         OkHttpClient client =  new OkHttpClient.Builder()
-               /* .sslSocketFactory(sslSocketFactory, (X509TrustManager)trustAllCerts[0]).hostnameVerifier(new HostnameVerifier() {
+               /* .sslSocketFactory(sslSocketFactory, (X509TrustManager)trustAllCerts[0]).hostnameVerifier(new HostnameVerifier() { //for disabling ssl pinning (debug)
             @Override
             public boolean verify(String hostname, SSLSession session) {
                 return true;
@@ -83,7 +82,7 @@ public class Api {
         Response response = null;
         try {
             response = client.newCall(request).execute();
-            if(response.code() == 400 && !ifLogin && context != null){
+            if(response.code() == 400 && !ifLogin && context != null){ //If response.code == 400 - deauth! means that token has expired
                 SharedPreferences pref = context.getSharedPreferences("LogData",Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = pref.edit();
                 Boolean willStart = false;

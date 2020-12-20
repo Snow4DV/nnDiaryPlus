@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,8 +14,6 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
-import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,10 +33,9 @@ import androidx.work.WorkManager;
 
 import com.amulyakhare.textdrawable.TextDrawable;
 import com.amulyakhare.textdrawable.util.ColorGenerator;
-import com.google.android.material.bottomnavigation.BottomNavigationMenu;
+import com.github.javiersantos.appupdater.AppUpdater;
+import com.github.javiersantos.appupdater.enums.UpdateFrom;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.internal.NavigationMenuView;
-import com.google.android.material.snackbar.Snackbar;
 import com.mikepenz.materialdrawer.AccountHeader;
 import com.mikepenz.materialdrawer.AccountHeaderBuilder;
 import com.mikepenz.materialdrawer.Drawer;
@@ -51,16 +46,8 @@ import com.mikepenz.materialdrawer.model.ProfileDrawerItem;
 import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
-import org.acra.ACRA;
-import org.acra.annotation.AcraCore;
-import org.acra.annotation.AcraHttpSender;
-import org.acra.config.CoreConfigurationBuilder;
-import org.acra.config.HttpSenderConfigurationBuilder;
-import org.acra.data.StringFormat;
-import org.acra.sender.HttpSender;
 import org.json.JSONObject;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -72,6 +59,7 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
         public Context context;
         String studentFIO;
         View mTooltipView;
+        private AppUpdater appUpdater;
         Drawer drawer;
         LinkedHashMap<String, JSONObject> daysJSON;
         int runningActivity = 1;
@@ -83,7 +71,7 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
         TextView title;
         BottomNavigationView buttomNavigationMenu;
         final static String TAG_1 = "FRAGMENT_1";
-        DairyFragment dairyFragment;
+        DiaryFragment dairyFragment;
         String TAG = "JorunalActivity";
         SharedPreferences pref;
 
@@ -129,7 +117,7 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
             multibutton = findViewById(R.id.multibutton);
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             myFragmentManager = getSupportFragmentManager();
-            dairyFragment = new DairyFragment();
+            dairyFragment = new DiaryFragment();
             finalMarksFragment = new FinalMarksFragment();
             toolBar = findViewById(R.id.toolbar);
             setSupportActionBar(toolBar);
@@ -158,9 +146,11 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
             PrimaryDrawerItem item1 = new PrimaryDrawerItem().withIdentifier(1).withName("Дневник").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_dairy));
             PrimaryDrawerItem item2 = new PrimaryDrawerItem().withIdentifier(2).withName("Расписание").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_timetable));
             PrimaryDrawerItem item3 = new PrimaryDrawerItem().withIdentifier(3).withName("Итоговые оценки").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_marks));
+            PrimaryDrawerItem item6 = new PrimaryDrawerItem().withIdentifier(4).withName("Сообщения").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_baseline_message_24));
             SecondaryDrawerItem item4 = new SecondaryDrawerItem().withName("Настройки").withIconTintingEnabled(true).withSelectable(false).withIcon(getDrawable(R.drawable.ic_settings));
             SecondaryDrawerItem item5 = new SecondaryDrawerItem().withName("Выход из аккаунта").withIconTintingEnabled(true).withSelectable(false).withIcon(getDrawable(R.drawable.ic_logout));
-            PrimaryDrawerItem item6 = new PrimaryDrawerItem().withIdentifier(4).withName("Сообщения").withIconTintingEnabled(true).withIcon(getDrawable(R.drawable.ic_baseline_message_24));
+            SecondaryDrawerItem item7 = new SecondaryDrawerItem().withName("Проверить обновления").withIconTintingEnabled(true).withIconTintingEnabled(true).withSelectable(false).withIcon(getDrawable(R.drawable.ic_system_update_white_24dp));
+            
             drawer = new DrawerBuilder().withActivity(this).withToolbar(toolBar).withAccountHeader(headerResult).addDrawerItems(
                     item1,
                     item2,
@@ -168,6 +158,7 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
                     item6,
                     new DividerDrawerItem(),
                     item4,
+                    item7,
                     item5
             ).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                 @Override
@@ -235,6 +226,12 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
                 window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
                 window.setStatusBarColor(ContextCompat.getColor(this, R.color.statusbarColor));
             }
+            appUpdater = new AppUpdater(this); //updates checker on github repo using lib
+            appUpdater.setUpdateFrom(UpdateFrom.GITHUB).setTitleOnUpdateAvailable("Доступно обновление!").setContentOnUpdateAvailable("Вышло новое обновление для приложения. Рекомендую обновиться для повышения стабильности.").setTitleOnUpdateNotAvailable("Обновление недоступно.")
+                    .setContentOnUpdateNotAvailable("Новых обновлений нет. Попробуйте позже!").setButtonUpdate("Обновлюсь!").setButtonDismiss("Напомнить позже").setButtonDoNotShowAgain("Отключить обновления");
+            appUpdater.setGitHubUserAndRepo("Snow4DV", "nnDiaryPlus");  //https://github.com/Snow4DV/nnDiaryPlus
+
+            appUpdater.start(); 
         }
 
 
@@ -301,7 +298,6 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
     }
 
     private boolean materialDrawerItemClickHolder(int position){
-
         Log.d(TAG, "materialDrawerItemClickHolder: fired");
             ft2 = getSupportFragmentManager().beginTransaction();
             if(position == 1 || position == 2 || position == 3 || position == 4) {
@@ -324,7 +320,7 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
                 case 1:
                     titleToolbar.setText("Дневник");
                     if(dairyFragment == null)
-                    dairyFragment = new DairyFragment();
+                    dairyFragment = new DiaryFragment();
                     if(!dairyFragment.isAdded()) {
                         ft2.replace(R.id.dairy_fragment, dairyFragment);
                         ft2.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_CLOSE);
@@ -342,6 +338,10 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
                     }
                     return true;
                 case 7:
+                    Toast.makeText(context, "Проверяю на наличие обновлений в фоне...", Toast.LENGTH_SHORT).show();
+                    appUpdater.start();
+                    break;
+                case 8:
                     editor.putString("loginStatus", "fail");
                     editor.apply();
                     Intent intent = new Intent(JournalActivity.this, LoginActivity.class);
@@ -379,7 +379,7 @@ public class JournalActivity extends AppCompatActivity { //TODO: resulting marks
                     break;
                 default:
                     Toast.makeText(JournalActivity.this, "Функция в разработке или произошла ошибка", Toast.LENGTH_SHORT).show();
-                    throw new NullPointerException();
+                    break;
 
             }
             return true;
