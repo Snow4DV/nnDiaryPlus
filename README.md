@@ -1,6 +1,6 @@
 # Нижегородский дневник++ [Alpha]
 <img alt="portfolio_view" src="https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/LogoGithub.png">
-<a href="https://github.com/Snow4DV/nnDiaryPlus/releases/download/v0.0.0.2/nnDiaryPlus.v0.0.0.2.apk">
+<a href="https://github.com/Snow4DV/nnDiaryPlus/releases/download/v0.0.0.4/nnDiaryPlus.v0.0.0.4.apk">
 <img width="30%" align="right" alt="portfolio_view" src="https://github.com/Snow4DV/nnDiaryPlus/blob/master/screenshots/installbutton.png"> 
 </a>
 Приложение для электронного дневника города Нижний Новгород с улучшенным функционалом и открытым исходным кодом, разработанное с нуля
